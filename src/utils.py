@@ -1,9 +1,11 @@
 import os
 import numpy as np
 import cv2
+import xml.etree.ElementTree as ET
 from PIL import Image
 from tqdm import tqdm
 from keras.utils.np_utils import to_categorical
+import matplotlib.pyplot as plt
 
 def get_data(folder):
 	"""
@@ -34,3 +36,47 @@ def get_data(folder):
 	y = np.asarray(y)
 	y_Hot = to_categorical(y , num_classes = 5)
 	return X,y_Hot
+
+def get_annotation(image, tree):
+    for elem in tree.iter():
+        if 'object' in elem.tag or 'part' in elem.tag:
+            for attr in list(elem):
+                if 'name' in attr.tag:
+                    name = attr.text
+                if 'bndbox' in attr.tag:
+                    for dim in list(attr):
+                        if 'xmin' in dim.tag:
+                            xmin = int(round(float(dim.text)))
+                        if 'ymin' in dim.tag:
+                            ymin = int(round(float(dim.text)))
+                        if 'xmax' in dim.tag:
+                            xmax = int(round(float(dim.text)))
+                        if 'ymax' in dim.tag:
+                            ymax = int(round(float(dim.text)))
+                    if name[0] == "R":
+                        cv2.rectangle(image, (xmin, ymin),
+                                (xmax, ymax), (0, 255, 0), 1)
+                        cv2.putText(image, name, (xmin + 10, ymin + 15),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1e-3 * image.shape[0], (0, 255, 0), 1)
+                    if name[0] == "W":
+                        cv2.rectangle(image, (xmin, ymin),
+                                (xmax, ymax), (0, 0, 255), 1)
+                        cv2.putText(image, name, (xmin + 10, ymin + 15),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1e-3 * image.shape[0], (0, 0, 255), 1)
+                    if name[0] == "P":
+                        cv2.rectangle(image, (xmin, ymin),
+                                (xmax, ymax), (255, 0, 0), 1)
+                        cv2.putText(image, name, (xmin + 10, ymin + 15),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1e-3 * image.shape[0], (255, 0, 0), 1)
+    plt.figure(figsize=(16,16))
+    plt.imshow(image)
+    plt.show()
+
+def main():
+    # Note that the function below is adapted from https://github.com/Shenggan/BCCD_Dataset
+    image = cv2.imread("../BCCD_Dataset/BCCD/JPEGImages/BloodImage_00022.jpg")
+    tree = ET.parse("../BCCD_Dataset/BCCD/Annotations/BloodImage_00022.xml")
+    get_annotation(image, tree)
+
+if __name__ == "__main__":
+    main()
