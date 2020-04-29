@@ -72,11 +72,40 @@ def get_annotation(image, tree):
     plt.imshow(image)
     plt.show()
 
+def crop_wbc(image, tree):
+    for elem in tree.iter():
+        if 'object' in elem.tag or 'part' in elem.tag:
+            for attr in list(elem):
+                if 'name' in attr.tag:
+                    name = attr.text
+                if 'bndbox' in attr.tag:
+                    for dim in list(attr):
+                        if 'xmin' in dim.tag:
+                            xmin = int(round(float(dim.text)))
+                        if 'ymin' in dim.tag:
+                            ymin = int(round(float(dim.text)))
+                        if 'xmax' in dim.tag:
+                            xmax = int(round(float(dim.text)))
+                        if 'ymax' in dim.tag:
+                            ymax = int(round(float(dim.text)))
+                    if name[0] == "W":
+                        return xmin, ymin, xmax, ymax
+
 def main():
     # Note that the function below is adapted from https://github.com/Shenggan/BCCD_Dataset
-    image = cv2.imread("../BCCD_Dataset/BCCD/JPEGImages/BloodImage_00022.jpg")
-    tree = ET.parse("../BCCD_Dataset/BCCD/Annotations/BloodImage_00022.xml")
-    get_annotation(image, tree)
+    for i in range(0, 500):
+        image_index = "BloodImage_00{:03d}".format(i)
+        print(image_index)
+        try :
+            image = cv2.imread(f"../BCCD_Dataset/BCCD/JPEGImages/{image_index}.jpg")
+            tree = ET.parse(f"../BCCD_Dataset/BCCD/Annotations/{image_index}.xml")
+            new_image = np.zeros_like(image)
+            wbc = crop_wbc(image, tree)
+            new_image[wbc[1]:wbc[3], wbc[0]:wbc[2], :] = 1
+            new_image = np.multiply(new_image, image)
+            cv2.imwrite(f"../dataset-master/masked/{image_index}.jpg", new_image)
+        except :
+            continue
 
 if __name__ == "__main__":
     main()
