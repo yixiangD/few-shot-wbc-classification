@@ -1,11 +1,13 @@
 import os
 import numpy as np
+import pandas as pd
 import cv2
 import xml.etree.ElementTree as ET
+import matplotlib.pyplot as plt
+
 from PIL import Image
 from tqdm import tqdm
 from keras.utils.np_utils import to_categorical
-import matplotlib.pyplot as plt
 
 def get_data(folder):
 	"""
@@ -92,18 +94,27 @@ def crop_wbc(image, tree):
                         return xmin, ymin, xmax, ymax
 
 def main():
+    fname = "../dataset-master/labels.csv"
+    df = pd.read_csv(fname)
+    df = df[["Image", "Category"]]
+    df.dropna(inplace=True)
+    labels = pd.Series(df.Category.values, index=df.Image).to_dict()
+
     # Note that the function below is adapted from https://github.com/Shenggan/BCCD_Dataset
     for i in range(0, 500):
         image_index = "BloodImage_00{:03d}".format(i)
-        print(image_index)
         try :
+            lab = labels[i]
+            if "," in lab:
+                print(f"Image {i}, multi-labels, skipped.")
+                continue
             image = cv2.imread(f"../BCCD_Dataset/BCCD/JPEGImages/{image_index}.jpg")
             tree = ET.parse(f"../BCCD_Dataset/BCCD/Annotations/{image_index}.xml")
             new_image = np.zeros_like(image)
             wbc = crop_wbc(image, tree)
             new_image[wbc[1]:wbc[3], wbc[0]:wbc[2], :] = 1
             new_image = np.multiply(new_image, image)
-            cv2.imwrite(f"../dataset-master/masked/{image_index}.jpg", new_image)
+            cv2.imwrite(f"../dataset-master/masked/{lab}_{i}.jpg", new_image)
         except :
             continue
 
