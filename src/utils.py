@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 
 from PIL import Image
 from tqdm import tqdm
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from keras.utils.np_utils import to_categorical
 
 def get_data(folder):
@@ -93,7 +94,20 @@ def crop_wbc(image, tree):
                     if name[0] == "W":
                         return xmin, ymin, xmax, ymax
 
-def main():
+def augment_image(path, img_size):
+    data_gen = ImageDataGenerator(
+            rescale = 1./255,
+            rotation_range=40,
+            width_shift_range=0.2,
+            height_shift_range=0.2,
+            shear_range=0.2,
+            zoom_range=0.2,
+            horizontal_flip=True,
+            fill_mode='nearest')
+    return data_gen.flow_from_directory(path, target_size=(img_size, img_size),
+            class_mode="categorical", batch_size=64, shuffle=True)
+
+def gen_masked_img():
     fname = "../dataset-master/labels.csv"
     df = pd.read_csv(fname)
     df = df[["Image", "Category"]]
@@ -114,9 +128,12 @@ def main():
             wbc = crop_wbc(image, tree)
             new_image[wbc[1]:wbc[3], wbc[0]:wbc[2], :] = 1
             new_image = np.multiply(new_image, image)
-            cv2.imwrite(f"../dataset-master/masked/{lab}_{i}.jpg", new_image)
+            cv2.imwrite(f"../dataset-master/masked/{lab}/BloodImage_{i}.jpg", new_image)
         except :
             continue
+
+def main():
+    print(augment_image("../dataset-master/masked/", 100))
 
 if __name__ == "__main__":
     main()
