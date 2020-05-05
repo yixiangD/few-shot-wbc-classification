@@ -1,4 +1,6 @@
 import os
+import random
+import shutil
 import numpy as np
 import pandas as pd
 import cv2
@@ -7,7 +9,8 @@ import matplotlib.pyplot as plt
 
 from PIL import Image
 from tqdm import tqdm
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.preprocessing.image import ImageDataGenerator,\
+        array_to_img, img_to_array, load_img
 from keras.utils.np_utils import to_categorical
 
 def get_data(folder):
@@ -94,18 +97,51 @@ def crop_wbc(image, tree):
                     if name[0] == "W":
                         return xmin, ymin, xmax, ymax
 
-def augment_image(path, img_size):
+def augment_image(inpath, des, nums):
     data_gen = ImageDataGenerator(
             rescale = 1./255,
-            rotation_range=40,
-            width_shift_range=0.2,
-            height_shift_range=0.2,
-            shear_range=0.2,
-            zoom_range=0.2,
+            rotation_range=90,
+            shear_range=0.1,
+            zoom_range=0.3,
             horizontal_flip=True,
             fill_mode='nearest')
-    return data_gen.flow_from_directory(path, target_size=(img_size, img_size),
-            class_mode="categorical", batch_size=64, shuffle=True)
+    for root, dirs, files in os.walk(inpath):
+        classes = dirs
+        break
+
+    fold = [36, 91, 150, 15]
+    j = 0
+    for c in classes:
+        times = int(fold[j]*1.2)
+        j += 1
+        for root, dirs, files in os.walk("".join([inpath, c])):
+            for f in files:
+                fname = "/".join([root, f])
+                print(f"Processing {fname}")
+                img = load_img(fname)
+                img = img_to_array(img)
+                img = img.reshape((1, ) + img.shape)
+                i = 0
+                for batch in data_gen.flow(x=img, save_to_dir=des, batch_size=16,
+                        shuffle=False, save_format="jpeg", save_prefix=c):
+                    i += 1
+                    if i > times:
+                        break
+
+def train_test_split(path, test_ratio=0.2):
+    for root, dirs, files in os.walk(path):
+        first = dirs
+        break
+
+    for c in first:
+        #dest = shutil.copytree(path+c, path+"TRAIN/"+c)
+        os.makedirs(path+"TEST/"+c)
+        for root, dirs, files in os.walk(path+"TRAIN/"+c):
+            print(root)
+            ntot = len(files)
+            test = random.sample(files, k=int(test_ratio*ntot))
+            for f in test:
+                shutil.move(root+"/"+f, path+"TEST/"+c)
 
 def gen_masked_img():
     fname = "../dataset-master/labels.csv"
@@ -133,7 +169,10 @@ def gen_masked_img():
             continue
 
 def main():
-    print(augment_image("../dataset-master/masked/", 100))
+    inp = "../dataset-master/masked/"
+    des = "../dataset-master/augmented/"
+    #augment_image(inp, des, 500)
+    train_test_split(des)
 
 if __name__ == "__main__":
     main()
