@@ -1,9 +1,11 @@
+import pickle
 from keras.models import Sequential
 from keras.layers import Dense, Conv2D, BatchNormalization,\
         Dropout, MaxPooling2D, Flatten
 from keras.callbacks import ModelCheckpoint
 from sklearn.svm import LinearSVC
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import confusion_matrix
 
 import matplotlib.pyplot as plt
 from utils import *
@@ -108,25 +110,33 @@ def cnn_kernel():
 
 def main():
     # get data
-    train_path = '../dataset2-master/images/TRAIN/'
-    test_path = '../dataset2-master/images/TEST/'
-    X_train, y_train = get_data(train_path)
-    X_test, y_test = get_data(test_path)
+   # X_train, y_train = get_data('../dataset2-master/images/TRAIN/')
+   # X_test, y_test = get_data('../dataset2-master/images/TEST/')
+    X_train, y_train = get_data('../dataset-master/augmented/TRAIN/')
+    X_test, y_test = get_data('../dataset-master/augmented/TEST/')
     #acc = svm(X_train, y_train, X_test, y_test)
-    acc = knn(X_train, y_train, X_test, y_test)
-    print(acc)
-    exit()
+    #acc = knn(X_train, y_train, X_test, y_test)
+    #print(acc)
+    #exit()
     # build model
-    model = cnn_model()
-    model = cnn_kernel()
+    #model = cnn_model() # cnn 1
+    model = cnn_kernel() # cnn 2
     filepath = "../results/weight_tr5.hdf5"
     checkpoint = ModelCheckpoint(filepath, monitor='val_acc',
         verbose=1, save_best_only=True, mode='max')
     callbacks_list = [checkpoint]
-    history = model.fit(X_train, y_train, epochs=200, batch_size=1024,
+    history = model.fit(X_train, y_train, epochs=300, batch_size=64,
         callbacks = callbacks_list, validation_data=(X_test, y_test))
     print(model.summary())
-    print("HISTORY", history.history)
+    score = model.evaluate(X_test, y_test, verbose=0)
+    print("Prediction score:", score)
+    y_pred = model.predict(X_test)
+    y_pred_classes = np.argmax(y_pred, axis=1)
+    y_true = np.argmax(y_test, axis=1)
+    confusion_mtx = confusion_matrix(y_true, y_pred_classes)
+    with open("./train_hist_dict2", "wb") as fname:
+        pickle.dump(history.history, fname)
+    np.savetxt("confusion_matrix.txt", confusion_mtx, fmt="%.4f")
     # plot results
 
 if __name__ == "__main__":
