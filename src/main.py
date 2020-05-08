@@ -41,6 +41,7 @@ def cnn_model():
     f, stride = 32, 3
     model.add(Conv2D(f, (stride, stride), activation='relu'))
     model.add(BatchNormalization())
+<<<<<<< HEAD
     m_stride = 2
     model.add(MaxPooling2D((m_stride, m_stride)))
 
@@ -53,12 +54,29 @@ def cnn_model():
     f, stride = 128, 3
     model.add(Conv2D(f, (stride, stride), activation='relu'))
     model.add(BatchNormalization())
+=======
+>>>>>>> d0a986cccc6ebf5591f419dde152ae1e65203ea2
     m_stride = 2
     model.add(MaxPooling2D((m_stride, m_stride)))
 
     f, stride = 64, 3
     model.add(Conv2D(f, (stride, stride), activation='relu'))
     model.add(BatchNormalization())
+<<<<<<< HEAD
+=======
+    m_stride = 2
+    model.add(MaxPooling2D((m_stride, m_stride)))
+
+    f, stride = 128, 3
+    model.add(Conv2D(f, (stride, stride), activation='relu'))
+    model.add(BatchNormalization())
+    m_stride = 2
+    model.add(MaxPooling2D((m_stride, m_stride)))
+
+    f, stride = 64, 3
+    model.add(Conv2D(f, (stride, stride), activation='relu'))
+    model.add(BatchNormalization())
+>>>>>>> d0a986cccc6ebf5591f419dde152ae1e65203ea2
     m_stride = 2
     model.add(MaxPooling2D((m_stride, m_stride)))
 
@@ -74,6 +92,7 @@ def cnn_model():
                   metrics=['accuracy'])
     return model
 
+<<<<<<< HEAD
 def cnn_kernel():
     # implement CNN model from kernel 2
     model = Sequential()
@@ -90,6 +109,28 @@ def cnn_kernel():
     model.add(Dropout(0.2))
 
     model.add(Conv2D(filters=4, kernel_size=5, activation='relu'))
+=======
+def svm():
+    # implement SVM classifier on 5 cell groups
+    pass
+
+def cnn_kernel():
+    # implement CNN model from kernel 2
+    model = Sequential()
+    model.add(Conv2D(16, 5, (2, 2), activation='relu'))
+    model.add(BatchNormalization())
+    model.add(Dropout(0.2))
+
+    model.add(Conv2D(8, 5, (2, 2), activation='relu'))
+    model.add(BatchNormalization())
+    model.add(Dropout(0.2))
+
+    model.add(Conv2D(4, 5, (2, 2), activation='relu'))
+    model.add(BatchNormalization())
+    model.add(Dropout(0.2))
+
+    model.add(Conv2D(4, 5, (2, 2), activation='relu'))
+>>>>>>> d0a986cccc6ebf5591f419dde152ae1e65203ea2
     model.add(BatchNormalization())
     model.add(Dropout(0.2))
 
@@ -100,7 +141,10 @@ def cnn_kernel():
     model.add(Dropout(0.2))
     model.add(Dense(8, activation='relu'))
     model.add(Dropout(0.2))
+<<<<<<< HEAD
     cat = 4
+=======
+>>>>>>> d0a986cccc6ebf5591f419dde152ae1e65203ea2
     model.add(Dense(cat, activation='softmax'))
 
     model.compile(loss='categorical_crossentropy',
@@ -119,12 +163,18 @@ def main():
     #print(acc)
     #exit()
     # build model
+<<<<<<< HEAD
     #model = cnn_model() # cnn 1
     model = cnn_kernel() # cnn 2
+=======
+    model = cnn_model()
+    model = cnn_kernel()
+>>>>>>> d0a986cccc6ebf5591f419dde152ae1e65203ea2
     filepath = "../results/weight_tr5.hdf5"
     checkpoint = ModelCheckpoint(filepath, monitor='val_acc',
         verbose=1, save_best_only=True, mode='max')
     callbacks_list = [checkpoint]
+<<<<<<< HEAD
     history = model.fit(X_train, y_train, epochs=300, batch_size=64,
         callbacks = callbacks_list, validation_data=(X_test, y_test))
     print(model.summary())
@@ -137,6 +187,14 @@ def main():
     with open("./train_hist_dict2", "wb") as fname:
         pickle.dump(history.history, fname)
     np.savetxt("confusion_matrix.txt", confusion_mtx, fmt="%.4f")
+=======
+    history = model.fit(X_train, y_trainHot, epochs=100, batch_size=1024,
+        callbacks = callbacks_list, validation_data=(X_test, y_testHot))
+    print(model.summary())
+    print("HISTORY", history.history)
+
+    # train model
+>>>>>>> d0a986cccc6ebf5591f419dde152ae1e65203ea2
     # plot results
 
 if __name__ == "__main__":
