@@ -109,11 +109,12 @@ def augment_image(inpath, des, nums):
         classes = dirs
         break
 
-    fold = [36, 91, 150, 15]
-    j = 0
+    fold = {'BASOPHIL': 1000,
+            'EOSINOPHIL': 43,
+            'LYMPHOCYTE': 109,
+            'MONOCYTE': 180,
+            'NEUTROPHIL': 18}
     for c in classes:
-        times = int(fold[j]*1.2)
-        j += 1
         for root, dirs, files in os.walk("".join([inpath, c])):
             for f in files:
                 fname = "/".join([root, f])
@@ -129,7 +130,7 @@ def augment_image(inpath, des, nums):
                                            save_format="jpeg",
                                            save_prefix=c):
                     i += 1
-                    if i > times:
+                    if i > fold[c]:
                         break
 
 def train_test_split(path, test_ratio=0.2):
@@ -181,7 +182,7 @@ def main():
     inp = "../dataset-master/masked/"
     des = "../dataset-master/augmented/"
     #gen_masked_img()
-    #augment_image(inp, des, 500)
+    augment_image(inp, des, 500)
     #train_test_split(des)
 
 if __name__ == "__main__":
