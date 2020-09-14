@@ -122,8 +122,12 @@ def augment_image(inpath, des, nums):
                 img = img_to_array(img)
                 img = img.reshape((1, ) + img.shape)
                 i = 0
-                for batch in data_gen.flow(x=img, save_to_dir=des, batch_size=16,
-                        shuffle=False, save_format="jpeg", save_prefix=c):
+                for batch in data_gen.flow(x=img,
+                                           save_to_dir=des,
+                                           batch_size=16,
+                                           shuffle=False,
+                                           save_format="jpeg",
+                                           save_prefix=c):
                     i += 1
                     if i > times:
                         break
@@ -156,8 +160,13 @@ def gen_masked_img():
         try :
             lab = labels[i]
             if "," in lab:
-                print(f"Image {i}, multi-labels, skipped.")
-                continue
+                labs = lab.split(',')
+                labs[0] = labs[0].replace(' ', '')
+                labs[1] = labs[1].replace(' ', '')
+                if labs[0] != labs[1]:
+                    print(f"Image {i}, multi-labels, {labs[0]} and {labs[1]} skipped.")
+                    continue
+                lab = labs[0]
             image = cv2.imread(f"../BCCD_Dataset/BCCD/JPEGImages/{image_index}.jpg")
             tree = ET.parse(f"../BCCD_Dataset/BCCD/Annotations/{image_index}.xml")
             new_image = np.zeros_like(image)
@@ -171,8 +180,9 @@ def gen_masked_img():
 def main():
     inp = "../dataset-master/masked/"
     des = "../dataset-master/augmented/"
+    #gen_masked_img()
     #augment_image(inp, des, 500)
-    train_test_split(des)
+    #train_test_split(des)
 
 if __name__ == "__main__":
     main()
