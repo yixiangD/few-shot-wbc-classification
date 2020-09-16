@@ -12,6 +12,7 @@ from tqdm import tqdm
 from tensorflow.keras.preprocessing.image import ImageDataGenerator,\
         array_to_img, img_to_array, load_img
 from keras.utils.np_utils import to_categorical
+import splitfolders
 
 def get_data(folder):
     """
@@ -133,21 +134,6 @@ def augment_image(inpath, des, nums):
                     if i > fold[c]:
                         break
 
-def train_test_split(path, test_ratio=0.2):
-    for root, dirs, files in os.walk(path):
-        first = dirs
-        break
-
-    for c in first:
-        #dest = shutil.copytree(path+c, path+"TRAIN/"+c)
-        os.makedirs(path+"TEST/"+c)
-        for root, dirs, files in os.walk(path+"TRAIN/"+c):
-            print(root)
-            ntot = len(files)
-            test = random.sample(files, k=int(test_ratio*ntot))
-            for f in test:
-                shutil.move(root+"/"+f, path+"TEST/"+c)
-
 def gen_masked_img():
     fname = "../dataset-master/labels.csv"
     df = pd.read_csv(fname)
@@ -179,11 +165,11 @@ def gen_masked_img():
             continue
 
 def main():
-    inp = "../dataset-master/masked/"
-    des = "../dataset-master/augmented/"
+    inp = "../data/raw2/"
+    des = "../data/split2/"
     #gen_masked_img()
-    augment_image(inp, des, 500)
-    #train_test_split(des)
+    #augment_image(inp, des, 500)
+    splitfolders.ratio(inp, output=des, seed=1337, ratio=(.8, .2), group_prefix=None)
 
 if __name__ == "__main__":
     main()
