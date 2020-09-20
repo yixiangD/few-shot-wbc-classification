@@ -169,7 +169,7 @@ def main():
     des = "../data/split2/"
     #gen_masked_img()
     #augment_image(inp, des, 500)
-    splitfolders.ratio(inp, output=des, seed=1337, ratio=(.8, .2), group_prefix=None)
+    splitfolders.ratio(inp, output=des, seed=1337, ratio=(.6, .2, .2), group_prefix=None)
 
 if __name__ == "__main__":
     main()

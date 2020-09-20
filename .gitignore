@@ -3,3 +3,4 @@ dataset-master/
 BCCD_Dataset/
 __pycache__/
 *.tar.gz
+.python-version
