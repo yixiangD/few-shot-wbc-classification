@@ -1,5 +1,6 @@
 
-BATCH_SIZE = 32
+BATCH_SIZE = 64
+LEARNING_RATE = 1e-4
 PATH = "../data/split2/"
-IMG_SIZE = (80, 60)
+IMG_SIZE = (75, 75)
 IMG_SHAPE = IMG_SIZE + (3,)

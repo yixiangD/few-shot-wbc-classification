@@ -32,6 +32,7 @@ def main():
                                                  shuffle=True,
                                                  batch_size=BATCH_SIZE,
                                                  image_size=IMG_SIZE)
+    class_names = train_dataset.class_names
 
     AUTOTUNE = tf.data.experimental.AUTOTUNE
 
@@ -55,14 +56,13 @@ def main():
 
     image_batch, label_batch = next(iter(train_dataset))
     feature_batch = base_model(image_batch)
-    print(feature_batch.shape)
+    print('Feature batch shape: ',feature_batch.shape)
     base_model.trainable = False
-    base_model.summary()
+    #base_model.summary()
 
     # add classification head
     global_average_layer = tf.keras.layers.GlobalAveragePooling2D()
     feature_batch_average = global_average_layer(feature_batch)
-    print(feature_batch_average.shape)
 
     prediction_layer = tf.keras.layers.Dense(1)
     prediction_batch = prediction_layer(feature_batch_average)
@@ -71,17 +71,20 @@ def main():
     inputs = tf.keras.Input(shape=IMG_SHAPE)
     x = data_augmentation(inputs)
     x = preprocess_input(x)
+    x = rescale(x)
     x = base_model(x, training=False)
     x = global_average_layer(x)
     x = tf.keras.layers.Dropout(0.2)(x)
+    dim = x.shape[-1]
+    for _ in range(3):
+        x = tf.keras.layers.Dense(dim)(x)
     outputs = prediction_layer(x)
     model = tf.keras.Model(inputs, outputs)
 
-    base_learning_rate = 0.0001
-    model.compile(optimizer=tf.keras.optimizers.Adam(lr=base_learning_rate),
+    model.compile(optimizer=tf.keras.optimizers.Adam(lr=LEARNING_RATE),
                   loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
                   metrics=['accuracy'])
-    model.summary()
+    #model.summary()
 
     initial_epochs = 10
     loss0, accuracy0 = model.evaluate(val_dataset)
@@ -115,8 +118,70 @@ def main():
     plt.ylim([0, 1.0])
     plt.title('Training and Validation Loss')
     plt.xlabel('epoch')
-    plt.show()
 
+    base_model.trainable = True
+    print("Number of layers in the base model: ", len(base_model.layers))
+    # Fine-tune from this layer onwards
+    fine_tune_at = -1
+    # Freeze all the layers before the `fine_tune_at` layer
+    for layer in base_model.layers[:fine_tune_at]:
+        layer.trainable =  False
+    model.compile(loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
+                  optimizer = tf.keras.optimizers.RMSprop(lr=LEARNING_RATE/10),
+                  metrics=['accuracy'])
+    model.summary()
+
+    fine_tune_epochs = 10
+    total_epochs =  initial_epochs + fine_tune_epochs
+
+    history_fine = model.fit(train_dataset,
+                             epochs=total_epochs,
+                             initial_epoch=history.epoch[-1],
+                             validation_data=val_dataset)
+
+    acc += history_fine.history['accuracy']
+    val_acc += history_fine.history['val_accuracy']
+
+    loss += history_fine.history['loss']
+    val_loss += history_fine.history['val_loss']
+
+    plt.figure(figsize=(8, 8))
+    plt.subplot(2, 1, 1)
+    plt.plot(acc, label='Training Accuracy')
+    plt.plot(val_acc, label='Validation Accuracy')
+    plt.ylim([0.8, 1])
+    plt.plot([initial_epochs-1,initial_epochs-1],
+             plt.ylim(), label='Start Fine Tuning')
+    plt.legend(loc='lower right')
+    plt.title('Training and Validation Accuracy')
+
+    plt.subplot(2, 1, 2)
+    plt.plot(loss, label='Training Loss')
+    plt.plot(val_loss, label='Validation Loss')
+    plt.ylim([0, 1.0])
+    plt.plot([initial_epochs-1,initial_epochs-1],
+             plt.ylim(), label='Start Fine Tuning')
+    plt.legend(loc='upper right')
+    plt.title('Training and Validation Loss')
+    plt.xlabel('epoch')
+
+    loss, accuracy = model.evaluate(test_dataset)
+    print('Test accuracy :', accuracy)
+    image_batch, label_batch = test_dataset.as_numpy_iterator().next()
+    predictions = model.predict_on_batch(image_batch).flatten()
+    # Apply a sigmoid since our model returns logits
+    predictions = tf.nn.sigmoid(predictions)
+    predictions = tf.where(predictions < 0.5, 0, 1)
+
+    print('Predictions:\n', predictions.numpy())
+    print('Labels:\n', label_batch)
+    plt.figure(figsize=(10, 10))
+    for i in range(9):
+        ax = plt.subplot(3, 3, i + 1)
+        plt.imshow(image_batch[i].astype("uint8"))
+        plt.title(class_names[predictions[i]])
+        plt.axis("off")
+    plt.show()
 
 if __name__ == "__main__":
     main()
