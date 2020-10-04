@@ -4,17 +4,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow.keras.preprocessing import image_dataset_from_directory
+from sklearn.metrics import confusion_matrix, classification_report
 
 from hyper import *
+import myplotstyle
 
 
-def main():
-    '''
-    Reference:
-
-    https://www.tensorflow.org/tutorials/images/
-    transfer_learning#create_the_base_model_from_the_pre-trained_convnets
-    '''
+def get_data():
     # set up image folder
     train_dir = os.path.join(PATH, 'train')
     test_dir = os.path.join(PATH, 'test')
@@ -32,14 +28,15 @@ def main():
                                                  shuffle=True,
                                                  batch_size=BATCH_SIZE,
                                                  image_size=IMG_SIZE)
-    class_names = train_dataset.class_names
-
     AUTOTUNE = tf.data.experimental.AUTOTUNE
 
     train_dataset = train_dataset.prefetch(buffer_size=AUTOTUNE)
     val_dataset = val_dataset.prefetch(buffer_size=AUTOTUNE)
     test_dataset = test_dataset.prefetch(buffer_size=AUTOTUNE)
 
+    return train_dataset, val_dataset, test_dataset
+
+def transfer_model(image_batch):
     data_augmentation = tf.keras.Sequential([
         tf.keras.layers.experimental.preprocessing.RandomFlip('horizontal'),
         tf.keras.layers.experimental.preprocessing.RandomRotation(0.2),
@@ -53,8 +50,6 @@ def main():
     base_model = tf.keras.applications.MobileNetV2(input_shape=IMG_SHAPE,
                                                    include_top=False,
                                                    weights='imagenet')
-
-    image_batch, label_batch = next(iter(train_dataset))
     feature_batch = base_model(image_batch)
     print('Feature batch shape: ',feature_batch.shape)
     base_model.trainable = False
@@ -69,8 +64,8 @@ def main():
     print(prediction_batch.shape)
 
     inputs = tf.keras.Input(shape=IMG_SHAPE)
-    x = data_augmentation(inputs)
-    x = preprocess_input(x)
+    #x = data_augmentation(inputs)
+    x = preprocess_input(inputs)
     x = rescale(x)
     x = base_model(x, training=False)
     x = global_average_layer(x)
@@ -85,6 +80,21 @@ def main():
                   loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
                   metrics=['accuracy'])
     #model.summary()
+    return base_model, model
+
+def main():
+    '''
+    Reference:
+
+    https://www.tensorflow.org/tutorials/images/
+    transfer_learning#create_the_base_model_from_the_pre-trained_convnets
+    '''
+
+    train_dataset, val_dataset, test_dataset = get_data()
+
+    image_batch, label_batch = next(iter(train_dataset))
+
+    base_model, model = transfer_model(image_batch)
 
     initial_epochs = 10
     loss0, accuracy0 = model.evaluate(val_dataset)
@@ -103,21 +113,20 @@ def main():
 
     plt.figure(figsize=(8, 8))
     plt.subplot(2, 1, 1)
-    plt.plot(acc, label='Training Accuracy')
-    plt.plot(val_acc, label='Validation Accuracy')
+    plt.plot(acc, label='Training')
+    plt.plot(val_acc, label='Validation')
     plt.legend(loc='lower right')
     plt.ylabel('Accuracy')
     plt.ylim([min(plt.ylim()),1])
-    plt.title('Training and Validation Accuracy')
 
     plt.subplot(2, 1, 2)
-    plt.plot(loss, label='Training Loss')
-    plt.plot(val_loss, label='Validation Loss')
+    plt.plot(loss, label='Training')
+    plt.plot(val_loss, label='Validation')
     plt.legend(loc='upper right')
-    plt.ylabel('Cross Entropy')
+    plt.ylabel('Loss')
     plt.ylim([0, 1.0])
-    plt.title('Training and Validation Loss')
     plt.xlabel('epoch')
+    plt.savefig('../figs/initial_train.png')
 
     base_model.trainable = True
     print("Number of layers in the base model: ", len(base_model.layers))
@@ -147,23 +156,28 @@ def main():
 
     plt.figure(figsize=(8, 8))
     plt.subplot(2, 1, 1)
-    plt.plot(acc, label='Training Accuracy')
-    plt.plot(val_acc, label='Validation Accuracy')
+    plt.plot(acc, label='Training')
+    plt.plot(val_acc, label='Validation')
+    plt.xticks(np.arange(0, initial_epochs + fine_tune_epochs + 1, 5))
     plt.ylim([0.8, 1])
+    plt.ylabel('Accuracy')
     plt.plot([initial_epochs-1,initial_epochs-1],
              plt.ylim(), label='Start Fine Tuning')
     plt.legend(loc='lower right')
-    plt.title('Training and Validation Accuracy')
+    #plt.title('Training and Validation Accuracy')
 
     plt.subplot(2, 1, 2)
-    plt.plot(loss, label='Training Loss')
-    plt.plot(val_loss, label='Validation Loss')
+    plt.plot(loss, label='Training')
+    plt.plot(val_loss, label='Validation')
     plt.ylim([0, 1.0])
+    plt.xticks(np.arange(0, initial_epochs + fine_tune_epochs + 1, 5))
+    plt.ylabel('Loss')
     plt.plot([initial_epochs-1,initial_epochs-1],
              plt.ylim(), label='Start Fine Tuning')
     plt.legend(loc='upper right')
-    plt.title('Training and Validation Loss')
+    #plt.title('Training and Validation Loss')
     plt.xlabel('epoch')
+    plt.savefig('../figs/full_train.png')
 
     loss, accuracy = model.evaluate(test_dataset)
     print('Test accuracy :', accuracy)
@@ -175,11 +189,11 @@ def main():
 
     print('Predictions:\n', predictions.numpy())
     print('Labels:\n', label_batch)
+    print(classification_report(label_batch, predictions.numpy()))
     plt.figure(figsize=(10, 10))
     for i in range(9):
         ax = plt.subplot(3, 3, i + 1)
         plt.imshow(image_batch[i].astype("uint8"))
-        plt.title(class_names[predictions[i]])
         plt.axis("off")
     plt.show()
 

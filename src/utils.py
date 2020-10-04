@@ -134,7 +134,9 @@ def augment_image(inpath, des, nums):
                     if i > fold[c]:
                         break
 
-def gen_masked_img():
+def gen_masked_img(inpath, outpath):
+    #inpath = "../BCCD_Dataset/BCCD/JPEGImages/"
+    #outpath = "../dataset-master/masked/"
     fname = "../dataset-master/labels.csv"
     df = pd.read_csv(fname)
     df = df[["Image", "Category"]]
@@ -143,7 +145,8 @@ def gen_masked_img():
 
     # Note that the function below is adapted from https://github.com/Shenggan/BCCD_Dataset
     for i in range(0, 500):
-        image_index = "BloodImage_00{:03d}".format(i)
+        image_index = "BloodImage_{:d}".format(i)
+        #image_index = "".format(i)
         try :
             lab = labels[i]
             if "," in lab:
@@ -154,22 +157,26 @@ def gen_masked_img():
                     print(f"Image {i}, multi-labels, {labs[0]} and {labs[1]} skipped.")
                     continue
                 lab = labs[0]
-            image = cv2.imread(f"../BCCD_Dataset/BCCD/JPEGImages/{image_index}.jpg")
-            tree = ET.parse(f"../BCCD_Dataset/BCCD/Annotations/{image_index}.xml")
+            image = cv2.imread(f"{inpath}/{image_index}.jpg")
+            tree = ET.parse(f"../BCCD_Dataset/BCCD/Annotations/BloodImage_00{i}.xml")
             new_image = np.zeros_like(image)
             wbc = crop_wbc(image, tree)
             new_image[wbc[1]:wbc[3], wbc[0]:wbc[2], :] = 1
             new_image = np.multiply(new_image, image)
-            cv2.imwrite(f"../dataset-master/masked/{lab}/BloodImage_{i}.jpg", new_image)
+            cv2.imwrite(f"{outpath}/{lab}_{i}.jpg", new_image)
         except :
             continue
 
 def main():
-    inp = "../data/raw2/"
-    des = "../data/split2/"
-    #gen_masked_img()
+    inp = "../data/split2/train/LYMPHOCYTE"
+    des = "../data/masked-split2/train/LYMPHOCYTE"
+    gen_masked_img(inp, des)
     #augment_image(inp, des, 500)
-    splitfolders.ratio(inp, output=des, seed=1337, ratio=(.6, .2, .2), group_prefix=None)
+    #inp = "../data/raw2/"
+    #des = "../data/split2/"
+    inp = "../data/masked2/"
+    des = "../data/masked-split2/"
+    #splitfolders.ratio(inp, output=des, seed=1337, ratio=(.6, .2, .2), group_prefix=None)
 
 if __name__ == "__main__":
     main()
