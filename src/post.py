@@ -1,17 +1,10 @@
-import os
-import random
-import shutil
 import numpy as np
 import pandas as pd
-import cv2
-import xml.etree.ElementTree as ET
+import seaborn as sn
 import matplotlib.pyplot as plt
+from sklearn import metrics
 
 import myplotstyle
-from PIL import Image
-from tqdm import tqdm
-from tensorflow.keras.preprocessing.image import ImageDataGenerator,\
-        array_to_img, img_to_array, load_img
 
 
 def plot_sample_distribution():
@@ -27,9 +20,32 @@ def plot_sample_distribution():
     plt.savefig('../figs/sample_distribution.png')
     plt.show()
 
+def show_stat(y_true, y_pred):
+    acc = metrics.accuracy_score(y_true, y_pred)
+    confusion = metrics.confusion_matrix(y_true, y_pred)
+    print(confusion)
+    df = pd.DataFrame(confusion, index=[i for i in ['LYMPHCYTE', 'NON LYMPHCYTE']],
+                      columns=[i for i in ['LYMPHCYTE', 'NON LYMPHCYTE']])
+    print('Prediction accuracy: {:.4f}'.format(acc))
+    plt.rcParams['font.size'] = 12
+    plt.figure()
+    sn.heatmap(df, cmap='coolwarm', annot=True)
+    pos, textvals = plt.yticks()
+    plt.yticks(pos, textvals, va='center')
+    plt.xlabel('Predicted Label')
+    plt.ylabel('True Label')
+    plt.savefig('../figs/init_confusion.png')
+    plt.show()
+
 def main():
-    plot_sample_distribution()
+    y_true = [1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1,\
+              1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1]
+    y_true = np.array(y_true)
+    y_pred = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,\
+              1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    y_pred = np.array(y_pred)
+    #plot_sample_distribution()
+    show_stat(y_true, y_pred)
 
 if __name__ == "__main__":
     main()
-[1 1 1 1 1 1 0 1 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 1 1]

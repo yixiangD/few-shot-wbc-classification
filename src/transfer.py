@@ -164,7 +164,6 @@ def main():
     plt.plot([initial_epochs-1,initial_epochs-1],
              plt.ylim(), label='Start Fine Tuning')
     plt.legend(loc='lower right')
-    #plt.title('Training and Validation Accuracy')
 
     plt.subplot(2, 1, 2)
     plt.plot(loss, label='Training')
@@ -175,7 +174,6 @@ def main():
     plt.plot([initial_epochs-1,initial_epochs-1],
              plt.ylim(), label='Start Fine Tuning')
     plt.legend(loc='upper right')
-    #plt.title('Training and Validation Loss')
     plt.xlabel('epoch')
     plt.savefig('../figs/full_train.png')
 
