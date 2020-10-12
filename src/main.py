@@ -10,9 +10,10 @@ from hyper import *
 import myplotstyle
 
 
-def get_data():
+def get_data(suffix=''):
     # set up image folder
-    train_dir = os.path.join(PATH, 'train')
+    train_dir = os.path.join(PATH, 'train'+suffix)
+    print(train_dir)
     test_dir = os.path.join(PATH, 'test')
     val_dir = os.path.join(PATH, 'val')
 
@@ -90,7 +91,8 @@ def main():
     transfer_learning#create_the_base_model_from_the_pre-trained_convnets
     '''
 
-    train_dataset, val_dataset, test_dataset = get_data()
+    #train_dataset, val_dataset, test_dataset = get_data()
+    train_dataset, val_dataset, test_dataset = get_data(suffix='_aug')
 
     image_batch, label_batch = next(iter(train_dataset))
 

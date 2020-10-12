@@ -1,4 +1,5 @@
 import os
+import shutil
 
 import numpy as np
 from tensorflow.keras.preprocessing.image import ImageDataGenerator,\
@@ -13,6 +14,11 @@ def affine_transform(in_dir, minority_class='LYMPHOCYTE', num=2):
     else:
         out_dir = '{}_aug/'.format(in_dir)
         in_dir += '/'
+
+    if os.path.exists(out_dir) and os.path.isdir(out_dir):
+        print('Destination folder exist, cleaning files in destination folder')
+        shutil.rmtree(out_dir)
+    shutil.copytree(in_dir, out_dir)
 
     data_gen = ImageDataGenerator(
         rescale = 1./255,
@@ -45,6 +51,5 @@ def affine_transform(in_dir, minority_class='LYMPHOCYTE', num=2):
 
 
 if __name__ == '__main__':
-    in_dir = '../data/split2/train/LYMPHOCYTE'
-    out_dir = '../data/split2/train_aug/LYMPHOCYTE'
-    affine_transform(in_dir, out_dir)
+    in_dir = '../data/split2/train/'
+    affine_transform(in_dir)
