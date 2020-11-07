@@ -1,4 +1,5 @@
 import os
+os.environ['CUDA_VISIBLE_DEVICES']='1'
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,6 +9,7 @@ from sklearn.metrics import confusion_matrix, classification_report
 
 from hyper import *
 import myplotstyle
+from example import build_model
 
 
 def get_data(suffix=''):
@@ -91,10 +93,15 @@ def main():
     transfer_learning#create_the_base_model_from_the_pre-trained_convnets
     '''
 
-    #train_dataset, val_dataset, test_dataset = get_data()
-    train_dataset, val_dataset, test_dataset = get_data(suffix='_aug')
+    train_dataset, val_dataset, test_dataset = get_data()
+    #train_dataset, val_dataset, test_dataset = get_data(suffix='_aug')
 
     image_batch, label_batch = next(iter(train_dataset))
+    model = build_model(2)
+    epochs = 25  # @param {type: "slider", min:8, max:80}
+    hist = model.fit(train_dataset, epochs=epochs, validation_data=val_dataset, verbose=2)
+    #plot_hist(hist)
+    exit()
 
     base_model, model = transfer_model(image_batch)
 
