@@ -1,5 +1,4 @@
 import os
-os.environ['CUDA_VISIBLE_DEVICES']='1'
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,7 +8,6 @@ from sklearn.metrics import confusion_matrix, classification_report
 
 from hyper import *
 import myplotstyle
-from example_lite import build_model
 
 
 def get_data(suffix=''):
@@ -39,7 +37,7 @@ def get_data(suffix=''):
 
     return train_dataset, val_dataset, test_dataset
 
-def transfer_model(image_batch):
+def transfer_model(image_batch, metrics):
     data_augmentation = tf.keras.Sequential([
         tf.keras.layers.experimental.preprocessing.RandomFlip('horizontal'),
         tf.keras.layers.experimental.preprocessing.RandomRotation(0.2),
@@ -62,7 +60,7 @@ def transfer_model(image_batch):
     global_average_layer = tf.keras.layers.GlobalAveragePooling2D()
     feature_batch_average = global_average_layer(feature_batch)
 
-    prediction_layer = tf.keras.layers.Dense(1)
+    prediction_layer = tf.keras.layers.Dense(1, activation='sigmoid')
     prediction_batch = prediction_layer(feature_batch_average)
     print(prediction_batch.shape)
 
@@ -76,14 +74,16 @@ def transfer_model(image_batch):
     dim = x.shape[-1]
     for _ in range(3):
         x = tf.keras.layers.Dense(dim)(x)
+
     outputs = prediction_layer(x)
     model = tf.keras.Model(inputs, outputs)
 
     model.compile(optimizer=tf.keras.optimizers.Adam(lr=LEARNING_RATE),
-                  loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
-                  metrics=['accuracy'])
+                  loss=tf.keras.losses.BinaryCrossentropy(),
+                  metrics=metrics)
     #model.summary()
     return base_model, model
+
 
 def main():
     '''
@@ -92,52 +92,34 @@ def main():
     https://www.tensorflow.org/tutorials/images/
     transfer_learning#create_the_base_model_from_the_pre-trained_convnets
     '''
-
     train_dataset, val_dataset, test_dataset = get_data()
     #train_dataset, val_dataset, test_dataset = get_data(suffix='_aug')
-
     image_batch, label_batch = next(iter(train_dataset))
-    with tf.device('/GPU:1'):
-        model = build_model(2)
-    epochs = 25  # @param {type: "slider", min:8, max:80}
-    with tf.device('/GPU:1'):
-        hist = model.fit(train_dataset, epochs=epochs, validation_data=val_dataset, verbose=2)
-    #plot_hist(hist)
-    exit()
 
-    base_model, model = transfer_model(image_batch)
+    #TODO
+    METRICS = [
+            tf.keras.metrics.TruePositives(name='tp'),
+            tf.keras.metrics.FalsePositives(name='fp'),
+            tf.keras.metrics.TrueNegatives(name='tn'),
+            tf.keras.metrics.FalseNegatives(name='fn'),
+            tf.keras.metrics.BinaryAccuracy(name='accuracy'),
+            tf.keras.metrics.Precision(name='precision'),
+            tf.keras.metrics.Recall(name='recall'),
+            tf.keras.metrics.AUC(name='auc'),
+            ]
+
+    base_model, model = transfer_model(image_batch, METRICS)
 
     initial_epochs = 10
-    loss0, accuracy0 = model.evaluate(val_dataset)
-    print("initial loss: {:.2f}".format(loss0))
-    print("initial accuracy: {:.2f}".format(accuracy0))
+    model.evaluate(val_dataset)
 
-    history = model.fit(train_dataset,
+    history=model.fit(train_dataset,
                         epochs=initial_epochs,
                         validation_data=val_dataset)
-
     acc = history.history['accuracy']
     val_acc = history.history['val_accuracy']
-
     loss = history.history['loss']
     val_loss = history.history['val_loss']
-
-    plt.figure(figsize=(8, 8))
-    plt.subplot(2, 1, 1)
-    plt.plot(acc, label='Training')
-    plt.plot(val_acc, label='Validation')
-    plt.legend(loc='lower right')
-    plt.ylabel('Accuracy')
-    plt.ylim([min(plt.ylim()),1])
-
-    plt.subplot(2, 1, 2)
-    plt.plot(loss, label='Training')
-    plt.plot(val_loss, label='Validation')
-    plt.legend(loc='upper right')
-    plt.ylabel('Loss')
-    plt.ylim([0, 1.0])
-    plt.xlabel('epoch')
-    plt.savefig('../figs/initial_train.png')
 
     base_model.trainable = True
     print("Number of layers in the base model: ", len(base_model.layers))
@@ -146,9 +128,17 @@ def main():
     # Freeze all the layers before the `fine_tune_at` layer
     for layer in base_model.layers[:fine_tune_at]:
         layer.trainable =  False
-    model.compile(loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
+
+    early_stopping = tf.keras.callbacks.EarlyStopping(
+            monitor='val_auc',
+            verbose=1,
+            patience=10,
+            mode='max',
+            restore_best_weights=True)
+
+    model.compile(loss=tf.keras.losses.BinaryCrossentropy(),
                   optimizer = tf.keras.optimizers.RMSprop(lr=LEARNING_RATE/10),
-                  metrics=['accuracy'])
+                  metrics=METRICS)
     model.summary()
 
     fine_tune_epochs = 10
@@ -157,6 +147,7 @@ def main():
     history_fine = model.fit(train_dataset,
                              epochs=total_epochs,
                              initial_epoch=history.epoch[-1],
+                             callbacks = [early_stopping],
                              validation_data=val_dataset)
 
     acc += history_fine.history['accuracy']
@@ -188,8 +179,7 @@ def main():
     plt.xlabel('epoch')
     plt.savefig('../figs/full_train.png')
 
-    loss, accuracy = model.evaluate(test_dataset)
-    print('Test accuracy :', accuracy)
+    model.evaluate(test_dataset)
     image_batch, label_batch = test_dataset.as_numpy_iterator().next()
     predictions = model.predict_on_batch(image_batch).flatten()
     # Apply a sigmoid since our model returns logits
