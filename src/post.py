@@ -8,15 +8,25 @@ import myplotstyle
 
 
 def plot_sample_distribution():
-    n_lymph, n_nonlymph = 34, 321
+    lym = np.array([24, 10])
+    # after augmentation
+   # lym = np.array([144, 10])
+    non_lym = np.array([225, 96])
     x1 = 1
+    width = 0.2
+    x = [x1, 2*x1]
     plt.figure()
-    plt.bar(np.arange(x1, 2*x1 + 0.1, x1), [n_lymph, n_nonlymph])
-    plt.text(x1, n_lymph + 1.0, str(n_lymph), ha='center')
-    plt.text(2*x1, n_nonlymph + 1.0, str(n_nonlymph), ha='center')
-    plt.ylabel('Image Sample Count')
-    plt.ylim([0, n_nonlymph + 20])
-    plt.xticks(np.arange(x1, 2*x1 + 0.1, x1), ['LYMPHCYTE', 'NON LYMPHCYTE'])
+    plt.bar(x, lym, width,
+            label='Lymphocyte', color='k', edgecolor='k', alpha=0.5)
+    plt.bar(x, non_lym, width,
+            bottom=lym, label='Non Lymphocyte', color='r', edgecolor='k', alpha=0.5)
+    #plt.text(x1, train[0] + 1.0, str(train), ha='center')
+    #plt.text(2*x1, train[1] + 1.0, str(n_nonlymph), ha='center')
+    plt.ylabel('Sample Count')
+    plt.ylim([0, 380])
+    plt.xlim([x1 - 2*width, 2*x1 + 2*width])
+    plt.xticks(x, ['Train', 'Test'])
+    plt.legend(loc='upper right')
     plt.savefig('../figs/sample_distribution.png')
     plt.show()
 
@@ -44,8 +54,8 @@ def main():
     y_pred = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,\
               1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
     y_pred = np.array(y_pred)
-    #plot_sample_distribution()
-    show_stat(y_true, y_pred)
+    plot_sample_distribution()
+    #show_stat(y_true, y_pred)
 
 if __name__ == "__main__":
     main()

@@ -112,6 +112,7 @@ def main():
                                     default='none',
                                     choices=['oversample', 'weighted', 'none'],
                                     help='list ways of treating imbalace')
+    parser.add_argument('--load', action='store_true')
     args = parser.parse_args()
     data = get_data()
     for k in data:
@@ -119,10 +120,17 @@ def main():
     split = 0.7
     n0 = len(data[0])
     n1 = len(data[1])
-    train_index0 = np.random.choice(np.arange(n0), ceil(split*n0), replace=False)
-    train_index1 = np.random.choice(np.arange(n1), ceil(split*n1), replace=False)
+    if not args.load:
+        train_index0 = np.random.choice(np.arange(n0), ceil(split*n0), replace=False)
+        train_index1 = np.random.choice(np.arange(n1), ceil(split*n1), replace=False)
+        np.savetxt('train_index0.txt', train_index0)
+        np.savetxt('train_index1.txt', train_index1)
+    else:
+        train_index0 = np.loadtxt('train_index0.txt').astype(int)
+        train_index1 = np.loadtxt('train_index1.txt').astype(int)
     test_index0 = set(np.arange(n0)).difference(set(train_index0))
     test_index1 = set(np.arange(n1)).difference(set(train_index1))
+    print(train_index0)
     train_x0 = data[0][train_index0]
     train_x1 = data[1][train_index1]
     test_x0 = data[0][list(test_index0)]
@@ -206,10 +214,10 @@ def main():
         minority_train_y = train_y[minority_train_idx]
         n_oversample = 4
         minority_train_xs = np.copy(minority_train_x)
-        for _ in range(n_oversample):
+        for _ in range(n_oversample-1):
             minority_trans = augment(minority_train_x)
             minority_train_xs = np.concatenate((minority_train_xs, minority_trans))
-        minority_train_ys = np.tile(minority_train_y, n_oversample + 1)
+        minority_train_ys = np.tile(minority_train_y, n_oversample)
         train_x = np.concatenate((train_x, minority_train_xs))
         train_y = np.concatenate((train_y, minority_train_ys), axis=None)
         history_fine = model.fit(train_x, train_y,
