@@ -14,6 +14,7 @@ from sklearn.utils import class_weight
 
 from hyper import *
 import myplotstyle
+from mixup_generator import MixupGenerator
 
 
 def get_data(suffix=''):
@@ -107,7 +108,7 @@ def main():
     parser = argparse.ArgumentParser(description='Specify the data folder path')
     parser.add_argument('--method', type=str,
                                     default='none',
-                                    choices=['oversample', 'weighted', 'none'],
+                                    choices=['oversample', 'weighted', 'none', 'mixup'],
                                     help='list ways of treating imbalace')
     parser.add_argument('--load', action='store_true')
     args = parser.parse_args()
@@ -127,7 +128,6 @@ def main():
         train_index1 = np.loadtxt('train_index1.txt').astype(int)
     test_index0 = set(np.arange(n0)).difference(set(train_index0))
     test_index1 = set(np.arange(n1)).difference(set(train_index1))
-    print(train_index0)
     train_x0 = data[0][train_index0]
     train_x1 = data[1][train_index1]
     test_x0 = data[0][list(test_index0)]
@@ -191,11 +191,11 @@ def main():
     #class_weights = compute_weight(13, 129)
     if args.method == 'weighted':
         history_fine = model.fit(train_x, train_y,
-                             epochs=total_epochs,
-                             initial_epoch=history.epoch[-1],
-                             validation_split=VAL_SPLIT,
-                             class_weight=class_weights,
-                             shuffle=True)
+                                 epochs=total_epochs,
+                                 initial_epoch=history.epoch[-1],
+                                 validation_split=VAL_SPLIT,
+                                 class_weight=class_weights,
+                                 shuffle=True)
     elif args.method == 'oversample':
         '''
         train_ds = tfds.as_numpy(train_dataset)
@@ -218,17 +218,25 @@ def main():
         train_x = np.concatenate((train_x, minority_train_xs))
         train_y = np.concatenate((train_y, minority_train_ys), axis=None)
         history_fine = model.fit(train_x, train_y,
-                             epochs=total_epochs,
-                             initial_epoch=history.epoch[-1],
-                             validation_split=VAL_SPLIT,
-                             shuffle=True)
-
+                                 epochs=total_epochs,
+                                 initial_epoch=history.epoch[-1],
+                                 validation_split=VAL_SPLIT,
+                                 shuffle=True)
+    elif args.method == 'mixup':
+        print('training data shape', train_x.shape, train_y.shape)
+        train_gen = MixupGenerator(train_x, train_y, batch_size=BATCH_SIZE, alpha=0.2)()
+        history_fine = model.fit(train_gen,
+                                 steps_per_epoch=10,
+                                 initial_epoch=history.epoch[-1],
+                                 epochs=total_epochs,
+                                 validation_data=(test_x, test_y),
+                                 shuffle=True)
     else:
         history_fine = model.fit(train_x, train_y,
-                             epochs=total_epochs,
-                             initial_epoch=history.epoch[-1],
-                             validation_split=VAL_SPLIT,
-                             shuffle=True)
+                                 epochs=total_epochs,
+                                 initial_epoch=history.epoch[-1],
+                                 validation_split=VAL_SPLIT,
+                                 shuffle=True)
 
     acc += history_fine.history['accuracy']
     val_acc += history_fine.history['val_accuracy']
