@@ -14,7 +14,7 @@ from sklearn.utils import class_weight
 
 from hyper import *
 import myplotstyle
-from mixup_generator import MixupGenerator
+from mixup_generator import *
 
 
 def get_data(suffix=''):
@@ -224,7 +224,7 @@ def main():
                                  shuffle=True)
     elif args.method == 'mixup':
         print('training data shape', train_x.shape, train_y.shape)
-        train_gen = MixupGenerator(train_x, train_y, batch_size=BATCH_SIZE, alpha=0.2)()
+        train_gen = MyMixupGenerator(train_x, train_y, batch_size=BATCH_SIZE, alpha=0.2)()
         history_fine = model.fit(train_gen,
                                  steps_per_epoch=10,
                                  initial_epoch=history.epoch[-1],
