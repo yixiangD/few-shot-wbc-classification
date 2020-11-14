@@ -17,13 +17,13 @@ import myplotstyle
 from mixup_generator import *
 
 
-def get_data(suffix=''):
+def get_data(path, suffix=''):
     # set up image folder
     X, y = [], []
     data = defaultdict(list)
     cell = ['LYMPHOCYTE', 'nonLYMPHOCYTE']
     for c in range(2):
-        img_dir = os.path.join(PATH, cell[c])
+        img_dir = os.path.join(path, cell[c])
         for root, dirs, files in os.walk(img_dir):
             root, dirs, files = root, dirs, files
             break
@@ -111,8 +111,14 @@ def main():
                                     choices=['oversample', 'weighted', 'none', 'mixup'],
                                     help='list ways of treating imbalace')
     parser.add_argument('--load', action='store_true')
+    parser.add_argument('--dataset', type=str, default='raw',
+                                               choices=['raw', 'mask'])
     args = parser.parse_args()
-    data = get_data()
+    if args.dataset == 'raw':
+        path = PATH1
+    else:
+        path = PATH2
+    data = get_data(path)
     for k in data:
         data[k] = np.concatenate(data[k])
     split = 0.7
@@ -121,8 +127,8 @@ def main():
     if not args.load:
         train_index0 = np.random.choice(np.arange(n0), ceil(split*n0), replace=False)
         train_index1 = np.random.choice(np.arange(n1), ceil(split*n1), replace=False)
-        np.savetxt('train_index0.txt', train_index0)
-        np.savetxt('train_index1.txt', train_index1)
+        np.savetxt(f'{args.dataset}train_index0.txt', train_index0)
+        np.savetxt(f'{args.dataset}train_index1.txt', train_index1)
     else:
         train_index0 = np.loadtxt('train_index0.txt').astype(int)
         train_index1 = np.loadtxt('train_index1.txt').astype(int)
@@ -223,8 +229,11 @@ def main():
                                  validation_split=VAL_SPLIT,
                                  shuffle=True)
     elif args.method == 'mixup':
-        print('training data shape', train_x.shape, train_y.shape)
-        train_gen = MyMixupGenerator(train_x, train_y, batch_size=BATCH_SIZE, alpha=0.2)()
+        nmixup = 5
+        train_gen = MyMixupGenerator(train_x, train_y,
+                                     batch_size=BATCH_SIZE,
+                                     alpha=0.2,
+                                     minority=nmixup)()
         history_fine = model.fit(train_gen,
                                  steps_per_epoch=10,
                                  initial_epoch=history.epoch[-1],
@@ -265,25 +274,26 @@ def main():
              plt.ylim(), label='Start Fine Tuning')
     plt.legend(loc='upper right')
     plt.xlabel('epoch')
-    plt.savefig('../figs/full_train.png')
+    #plt.savefig('../figs/full_train.png')
 
     result = model.evaluate(test_x, test_y)
     predictions = model.predict(test_x)
     plt.figure()
     plot_roc('Test (auc: {:.4f})'.format(result[-1]), test_y, predictions, color='r')
-    predictions = tf.nn.sigmoid(predictions)
-    predictions = tf.where(predictions < 0.5, 0, 1)
-    print(classification_report(test_y, predictions))
+    #predictions = tf.nn.sigmoid(predictions)
+    #predictions = tf.where(predictions < 0.5, 0, 1)
+    #print(classification_report(test_y, predictions))
 
     # reevalute on training data
     result = model.evaluate(train_x, train_y)
     predictions = model.predict(train_x)
     plot_roc('Train (auc: {:.4f})'.format(result[-1]), train_y, predictions, color='k')
-    predictions = tf.nn.sigmoid(predictions)
-    predictions = tf.where(predictions < 0.5, 0, 1)
-    print(classification_report(train_y, predictions))
-    name = PATH.split('/')[-1]
-    plt.savefig(f'../figs/{name}_{args.method}.png')
+    #predictions = tf.nn.sigmoid(predictions)
+    #predictions = tf.where(predictions < 0.5, 0, 1)
+    #print(classification_report(train_y, predictions))
+    if args.method == 'mixup':
+        plt.savefig(f'../figs/{args.dataset}_{args.method}{nmixup}.png')
+    plt.savefig(f'../figs/{args.dataset}_{args.method}.png')
     plt.show()
 
 if __name__ == "__main__":

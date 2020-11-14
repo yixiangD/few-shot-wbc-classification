@@ -2,9 +2,6 @@ import numpy as np
 
 
 class MixupGenerator():
-    '''
-    Ref: https://github.com/yu4u/mixup-generator/blob/master/mixup_generator.py
-    '''
     def __init__(self, X_train, y_train, batch_size=32, alpha=0.2, shuffle=True, datagen=None):
         self.X_train = X_train
         self.y_train = y_train
@@ -62,12 +59,23 @@ class MixupGenerator():
         return X, y
 
 class MyMixupGenerator():
-    def __init__(self, X_train, y_train, batch_size=32, alpha=0.2, shuffle=True):
+    '''
+    This class is adopted from the one shown in
+        https://github.com/yu4u/mixup-generator/blob/master/mixup_generator.py
+    Differences:
+    1) do not support data generator as in the origianl post, simplify for this project
+    2) instead of processing two batches at a time, here we only take one batch and shuffle
+    the indices
+    3) support minority data augmentation for minority class (labled with 0) in binary
+    classification
+    '''
+    def __init__(self, X_train, y_train, batch_size=32, alpha=0.2, minority=0, shuffle=True):
         self.X_train = X_train
         self.y_train = y_train
         self.batch_size = batch_size
         self.alpha = alpha
         self.shuffle = shuffle
+        self.minority = minority
         self.sample_num = len(X_train)
 
     def __call__(self):
@@ -76,8 +84,10 @@ class MyMixupGenerator():
             itr_num = int(len(indexes) // (self.batch_size))
             for i in range(itr_num):
                 batch_ids = indexes[i*self.batch_size : (i+1)*self.batch_size]
-                X, y = self.__minority_data_generation(batch_ids)
-                #X, y = self.__data_generation(batch_ids)
+                if self.minority != 0:
+                    X, y = self.__minority_data_generation(batch_ids, self.minority)
+                else:
+                    X, y = self.__data_generation(batch_ids)
                 yield X, y
 
     def __get_exploration_order(self):
@@ -102,19 +112,19 @@ class MyMixupGenerator():
         y = y1 * y_l + y2 * (1 - y_l)
         return X, y
 
-    def __minority_data_generation(self, batch_ids):
-        l = np.random.beta(self.alpha, self.alpha, self.batch_size)
-        X_l = l.reshape(self.batch_size, 1, 1, 1)
-
-        X1 = self.X_train[batch_ids]
+    def __minority_data_generation(self, batch_ids, minority):
+        X = self.X_train[batch_ids]
         y = self.y_train[batch_ids]
         if 0 in y:
-            minor_ids = np.where(y == 0)[0]
-            new_ids = np.random.permutation(minor_ids)
-            X2 = np.copy(X1)
-            for i in range(len(minor_ids)):
-                X2[minor_ids[i]] = X2[new_ids[i]]
-            X = X1 * X_l + X2 * (1 - X_l)
+            minor_ids = np.tile(np.where(y == 0)[0], minority)
+            l = np.random.beta(self.alpha, self.alpha, len(minor_ids))
+            X_l = l.reshape(len(l), 1, 1, 1)
+
+            x1 = X[minor_ids]
+            x2 = X[np.random.permutation(minor_ids)]
+            X_new = x1*X_l + x2*(1-X_l)
+            X = np.concatenate((X, X_new))
+            y = np.concatenate((y, np.zeros(len(minor_ids))))
             return X, y
         else:
-            return X1, y
+            return X, y
