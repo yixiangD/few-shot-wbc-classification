@@ -79,13 +79,10 @@ def plot_roc(name, labels, predictions, **kwargs):
     fp, tp, threshold = sklearn.metrics.roc_curve(labels, predictions)
     #print(fp, tp, threshold)
     plt.plot(100*fp, 100*tp, label=name, linewidth=2, **kwargs)
-    plt.xlabel('False positives [%]')
-    plt.ylabel('True positives [%]')
+    plt.xlabel('FP [%]')
+    plt.ylabel('TP [%]')
     plt.xlim([-0.5, 100])
     plt.ylim([0, 100.5])
-    plt.grid(True)
-    ax = plt.gca()
-    ax.set_aspect('equal')
     plt.legend(loc='lower right')
 
 def augment(imgs):
@@ -265,7 +262,7 @@ def main():
     result = model.evaluate(test_x, test_y)
     predictions = model.predict(test_x)
     plt.figure()
-    plot_roc('test (auc: {:.4f})'.format(result[-1]), test_y, predictions, color='r')
+    plot_roc('Test (auc: {:.4f})'.format(result[-1]), test_y, predictions, color='r')
     predictions = tf.nn.sigmoid(predictions)
     predictions = tf.where(predictions < 0.5, 0, 1)
     print(classification_report(test_y, predictions))
@@ -273,11 +270,12 @@ def main():
     # reevalute on training data
     result = model.evaluate(train_x, train_y)
     predictions = model.predict(train_x)
-    plot_roc('train (auc: {:.4f})'.format(result[-1]), train_y, predictions, color='k')
+    plot_roc('Train (auc: {:.4f})'.format(result[-1]), train_y, predictions, color='k')
     predictions = tf.nn.sigmoid(predictions)
     predictions = tf.where(predictions < 0.5, 0, 1)
     print(classification_report(train_y, predictions))
-    plt.savefig(f'../figs/{args.method}.png')
+    name = PATH.split('/')[-1]
+    plt.savefig(f'../figs/{name}_{args.method}.png')
     plt.show()
 
 if __name__ == "__main__":
