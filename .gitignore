@@ -2,5 +2,8 @@ dataset2-master/
 dataset-master/
 BCCD_Dataset/
 __pycache__/
+template/
+results/
+figs/
 *.tar.gz
 .python-version

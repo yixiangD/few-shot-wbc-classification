@@ -113,6 +113,7 @@ def main():
     parser.add_argument('--load', action='store_true')
     parser.add_argument('--dataset', type=str, default='raw',
                                                choices=['raw', 'mask'])
+    parser.add_argument('--alpha', type=float, default=0.2)
     args = parser.parse_args()
     if args.dataset == 'raw':
         path = PATH1
@@ -127,11 +128,11 @@ def main():
     if not args.load:
         train_index0 = np.random.choice(np.arange(n0), ceil(split*n0), replace=False)
         train_index1 = np.random.choice(np.arange(n1), ceil(split*n1), replace=False)
-        np.savetxt(f'{args.dataset}train_index0.txt', train_index0)
-        np.savetxt(f'{args.dataset}train_index1.txt', train_index1)
+        np.savetxt(f'./index/{args.dataset}train_index0.txt', train_index0)
+        np.savetxt(f'./index/{args.dataset}train_index1.txt', train_index1)
     else:
-        train_index0 = np.loadtxt('train_index0.txt').astype(int)
-        train_index1 = np.loadtxt('train_index1.txt').astype(int)
+        train_index0 = np.loadtxt(f'./index/{args.dataset}train_index0.txt').astype(int)
+        train_index1 = np.loadtxt(f'./index/{args.dataset}train_index1.txt').astype(int)
     test_index0 = set(np.arange(n0)).difference(set(train_index0))
     test_index1 = set(np.arange(n1)).difference(set(train_index1))
     train_x0 = data[0][train_index0]
@@ -229,10 +230,10 @@ def main():
                                  validation_split=VAL_SPLIT,
                                  shuffle=True)
     elif args.method == 'mixup':
-        nmixup = 5
+        nmixup = 0
         train_gen = MyMixupGenerator(train_x, train_y,
                                      batch_size=BATCH_SIZE,
-                                     alpha=0.2,
+                                     alpha=args.alpha,
                                      minority=nmixup)()
         history_fine = model.fit(train_gen,
                                  steps_per_epoch=10,
@@ -285,16 +286,22 @@ def main():
     #print(classification_report(test_y, predictions))
 
     # reevalute on training data
-    result = model.evaluate(train_x, train_y)
+    train_result = model.evaluate(train_x, train_y)
     predictions = model.predict(train_x)
-    plot_roc('Train (auc: {:.4f})'.format(result[-1]), train_y, predictions, color='k')
+    plot_roc('Train (auc: {:.4f})'.format(train_result[-1]), train_y, predictions, color='k')
+    tab = f'{args.dataset}_{args.method}.txt'
+    if args.method == 'mixup':
+        tab = f'{args.dataset}_{args.method}_{args.alpha}.txt'
+    with open(tab, 'a') as infile:
+        np.savetxt(infile, (result, train_result), fmt='%.4f')
     #predictions = tf.nn.sigmoid(predictions)
     #predictions = tf.where(predictions < 0.5, 0, 1)
     #print(classification_report(train_y, predictions))
     if args.method == 'mixup':
-        plt.savefig(f'../figs/{args.dataset}_{args.method}{nmixup}.png')
-    plt.savefig(f'../figs/{args.dataset}_{args.method}.png')
-    plt.show()
+        plt.savefig(f'../figs/{args.dataset}_{args.method}{nmixup}{args.alpha}.png')
+    else:
+        plt.savefig(f'../figs/{args.dataset}_{args.method}.png')
+    #plt.show()
 
 if __name__ == "__main__":
     main()

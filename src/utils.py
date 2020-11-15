@@ -12,7 +12,7 @@ from tqdm import tqdm
 from tensorflow.keras.preprocessing.image import ImageDataGenerator,\
         array_to_img, img_to_array, load_img
 from keras.utils.np_utils import to_categorical
-import splitfolders
+#import splitfolders
 
 def get_data(folder):
     """
@@ -167,7 +167,39 @@ def gen_masked_img(inpath, outpath):
         except :
             continue
 
+def read_results(path, train=True):
+    for root, dirs, files in os.walk(path):
+        root, dirs, files = root, dirs, files
+        break
+    if train:
+        index = np.arange(1, 10, 2)
+    else:
+        index = np.arange(0, 10, 2)
+    raw, mask = dict(), dict()
+    for f in files:
+        if f.endswith('.txt'):
+            print(f)
+            arr = np.loadtxt('/'.join([root, f]))
+            auc = arr[index, -1]
+            in_arr = f[:-4].split('_')
+            dataset = in_arr[0]
+            method = in_arr[1:]
+            if isinstance(method, list):
+                method = ''.join(method)
+            if dataset == 'raw':
+                raw[method] = np.array([np.mean(auc), np.std(auc)])
+            else:
+                mask[method] = np.array([np.mean(auc), np.std(auc)])
+    print(raw, mask)
+    for k in raw.keys():
+        print('{:s} & {:.4f} $\pm$ {:.4f} & {:.4f} $\pm$ {:.4f}\\\\'.format(k, raw[k][0], raw[k][1], mask[k][0], mask[k][1]))
+
+
 def main():
+    read_results('./')
+    print('\n')
+    read_results('./', False)
+    exit()
     inp = "../data/split2/train/LYMPHOCYTE"
     des = "../data/masked-split2/train/LYMPHOCYTE"
     gen_masked_img(inp, des)
