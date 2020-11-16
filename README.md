@@ -1,9 +1,7 @@
 # Deep learning model for WBC classification
 ## Dataset:
-*dataset-master* and *dataset2-master* are recorded in the [kaggle dataset](https://www.kaggle.com/paultimothymooney/blood-cells).
-*BCCD_Dataset* is recorded in the [kaggle dataset](https://www.kaggle.com/surajiiitm/bccd-dataset).
-- Raw dataset: WBC images with RBCs
-- Masked dataset: WBC images with RBCs pixels removed
+- Raw dataset (data/raw2/): WBC images with RBCs. We used *dataset-master* and *dataset2-master* in the [kaggle dataset](https://www.kaggle.com/paultimothymooney/blood-cells).
+- Masked dataset (data/masked/): WBC images with RBCs pixels removed. In addition to the raw images, we used the corresponding annotations from [BCCD_Dataset](https://www.kaggle.com/surajiiitm/bccd-dataset).
 ## Model
 Transfer learning with Mobile-Net
 ## Methods for Data Imbalance
