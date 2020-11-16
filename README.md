@@ -5,9 +5,9 @@
 - Raw dataset: WBC images with RBCs
 - Masked dataset: WBC images with RBCs pixels removed
 ## Model
-- transfer learning with Mobile-Net
+Transfer learning with Mobile-Net
 ## Methods for Data Imbalance
 - Class weighting
 - Oversampling
-- Mixup [Zhang et al. 2018](https://arxiv.org/pdf/1710.09412.pdf)
+- Mixup ([Zhang et al. 2018](https://arxiv.org/pdf/1710.09412.pdf))
 - Minority Mixup: perform oversampling using mixup
