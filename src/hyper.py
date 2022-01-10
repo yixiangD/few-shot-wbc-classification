@@ -1,4 +1,3 @@
-
 BATCH_SIZE = 32
 LEARNING_RATE = 1e-4
 PATH1 = "../data/raw2"

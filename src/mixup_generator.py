@@ -1,8 +1,10 @@
 import numpy as np
 
 
-class MixupGenerator():
-    def __init__(self, X_train, y_train, batch_size=32, alpha=0.2, shuffle=True, datagen=None):
+class MixupGenerator:
+    def __init__(
+        self, X_train, y_train, batch_size=32, alpha=0.2, shuffle=True, datagen=None
+    ):
         self.X_train = X_train
         self.y_train = y_train
         self.batch_size = batch_size
@@ -17,7 +19,9 @@ class MixupGenerator():
             itr_num = int(len(indexes) // (self.batch_size * 2))
 
             for i in range(itr_num):
-                batch_ids = indexes[i * self.batch_size * 2:(i + 1) * self.batch_size * 2]
+                batch_ids = indexes[
+                    i * self.batch_size * 2 : (i + 1) * self.batch_size * 2
+                ]
                 X, y = self.__data_generation(batch_ids)
 
                 yield X, y
@@ -36,8 +40,8 @@ class MixupGenerator():
         X_l = l.reshape(self.batch_size, 1, 1, 1)
         y_l = np.copy(l)
 
-        X1 = self.X_train[batch_ids[:self.batch_size]]
-        X2 = self.X_train[batch_ids[self.batch_size:]]
+        X1 = self.X_train[batch_ids[: self.batch_size]]
+        X2 = self.X_train[batch_ids[self.batch_size :]]
         X = X1 * X_l + X2 * (1 - X_l)
 
         if self.datagen:
@@ -49,17 +53,18 @@ class MixupGenerator():
             y = []
 
             for y_train_ in self.y_train:
-                y1 = y_train_[batch_ids[:self.batch_size]]
-                y2 = y_train_[batch_ids[self.batch_size:]]
+                y1 = y_train_[batch_ids[: self.batch_size]]
+                y2 = y_train_[batch_ids[self.batch_size :]]
                 y.append(y1 * y_l + y2 * (1 - y_l))
         else:
-            y1 = self.y_train[batch_ids[:self.batch_size]]
-            y2 = self.y_train[batch_ids[self.batch_size:]]
+            y1 = self.y_train[batch_ids[: self.batch_size]]
+            y2 = self.y_train[batch_ids[self.batch_size :]]
             y = y1 * y_l + y2 * (1 - y_l)
         return X, y
 
-class MyMixupGenerator():
-    '''
+
+class MyMixupGenerator:
+    """
     This class is adopted from the one shown in
         https://github.com/yu4u/mixup-generator/blob/master/mixup_generator.py
     Differences:
@@ -68,8 +73,11 @@ class MyMixupGenerator():
     the indices
     3) support minority data augmentation for minority class (labled with 0) in binary
     classification
-    '''
-    def __init__(self, X_train, y_train, batch_size=32, alpha=0.2, minority=0, shuffle=True):
+    """
+
+    def __init__(
+        self, X_train, y_train, batch_size=32, alpha=0.2, minority=0, shuffle=True
+    ):
         self.X_train = X_train
         self.y_train = y_train
         self.batch_size = batch_size
@@ -83,7 +91,7 @@ class MyMixupGenerator():
             indexes = self.__get_exploration_order()
             itr_num = int(len(indexes) // (self.batch_size))
             for i in range(itr_num):
-                batch_ids = indexes[i*self.batch_size : (i+1)*self.batch_size]
+                batch_ids = indexes[i * self.batch_size : (i + 1) * self.batch_size]
                 if self.minority != 0:
                     X, y = self.__minority_data_generation(batch_ids, self.minority)
                 else:
@@ -122,7 +130,7 @@ class MyMixupGenerator():
 
             x1 = X[minor_ids]
             x2 = X[np.random.permutation(minor_ids)]
-            X_new = x1*X_l + x2*(1-X_l)
+            X_new = x1 * X_l + x2 * (1 - X_l)
             X = np.concatenate((X, X_new))
             y = np.concatenate((y, np.zeros(len(minor_ids))))
             return X, y
