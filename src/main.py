@@ -315,7 +315,7 @@ def main():
     )
     plt.legend(loc="upper right")
     plt.xlabel("epoch")
-    # plt.savefig('../figs/full_train.png')
+    # plt.savefig('./figs/full_train.png')
 
     result = model.evaluate(test_x, test_y)
     predictions = model.predict(test_x)
@@ -331,18 +331,18 @@ def main():
     plot_roc(
         "Train (auc: {:.4f})".format(train_result[-1]), train_y, predictions, color="k"
     )
-    tab = f"{args.dataset}_{args.method}.txt"
+    tab = f"results/{args.dataset}_{args.method}.txt"
     if args.method == "mixup":
-        tab = f"{args.dataset}_{args.method}_{args.alpha}.txt"
+        tab = f"results/{args.dataset}_{args.method}_{args.alpha}.txt"
     with open(tab, "a") as infile:
         np.savetxt(infile, (result, train_result), fmt="%.4f")
     # predictions = tf.nn.sigmoid(predictions)
     # predictions = tf.where(predictions < 0.5, 0, 1)
     # print(classification_report(train_y, predictions))
     if args.method == "mixup":
-        plt.savefig(f"../figs/{args.dataset}_{args.method}{nmixup}{args.alpha}.png")
+        plt.savefig(f"./figs/{args.dataset}_{args.method}{nmixup}{args.alpha}.png")
     else:
-        plt.savefig(f"../figs/{args.dataset}_{args.method}.png")
+        plt.savefig(f"./figs/{args.dataset}_{args.method}.png")
     # plt.show()
 
 
