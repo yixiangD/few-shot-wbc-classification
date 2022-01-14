@@ -1,7 +1,9 @@
 # Deep learning model for WBC image classification
 ## Quick start
 ```
-conda install -c forge tensorflow
+conda config --add channels conda-forge
+conda config --set channel_priority strict
+conda install tensorflow==2.4.0
 ```
 ## Dataset:
 - Raw dataset (data/raw2/): WBC images with RBCs. We used *dataset-master* and *dataset2-master* in the [kaggle dataset](https://www.kaggle.com/paultimothymooney/blood-cells).
