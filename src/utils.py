@@ -7,6 +7,8 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import sklearn
+import tensorflow as tf
 from keras.utils.np_utils import to_categorical
 from PIL import Image
 from tensorflow.keras.preprocessing.image import (
@@ -231,6 +233,32 @@ def read_results(path, train=True):
                 k, raw[k][0], raw[k][1], mask[k][0], mask[k][1]
             )
         )
+
+
+def plot_roc(name, labels, predictions, **kwargs):
+    fp, tp, threshold = sklearn.metrics.roc_curve(labels, predictions)
+    # print(fp, tp, threshold)
+    plt.plot(100 * fp, 100 * tp, label=name, linewidth=2, **kwargs)
+    plt.xlabel("FP [%]")
+    plt.ylabel("TP [%]")
+    plt.xlim([-0.5, 100])
+    plt.ylim([0, 100.5])
+    plt.legend(loc="lower right")
+
+
+def augment(imgs):
+    res = []
+    for i in range(imgs.shape[0]):
+        image = imgs[i]
+        image_shape = image.shape
+        image = tf.image.resize_with_crop_or_pad(
+            image, image_shape[0] + 6, image_shape[1] + 6
+        )
+        # Random crop back to the original size
+        image = tf.image.random_crop(image, size=image_shape)
+        image = tf.image.random_brightness(image, max_delta=0.5)  # Random brightness
+        res.append(np.expand_dims(image, axis=0))
+    return np.concatenate(res)
 
 
 def main():

@@ -6,7 +6,6 @@ from math import ceil, floor
 import matplotlib.pyplot as plt
 import myplotstyle
 import numpy as np
-import sklearn
 import tensorflow as tf
 import tensorflow_datasets as tfds
 from hyper import (
@@ -24,6 +23,8 @@ from mixup_generator import MixupGenerator, MyMixupGenerator
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.utils import class_weight
 from tensorflow.keras.preprocessing import image_dataset_from_directory
+
+from src.utils import augment, plot_roc
 
 
 def get_data(path, suffix=""):
@@ -64,8 +65,8 @@ def transfer_model(metrics):
     global_average_layer = tf.keras.layers.GlobalAveragePooling2D()
 
     inputs = tf.keras.Input(shape=IMG_SHAPE)
-    augment = False
-    if augment:
+    AUGMENT = False
+    if AUGMENT:
         x = data_augmentation(inputs)
     x = preprocess_input(inputs)
     x = rescale(x)
@@ -86,40 +87,6 @@ def transfer_model(metrics):
         metrics=metrics,
     )
     return base_model, model
-
-
-def compute_weight(pos, neg):
-    total = pos + neg
-    weight0 = (1 / neg) * total / 2.0
-    weight1 = (1 / pos) * total / 2.0
-    class_weight = {0: weight0, 1: weight1}
-    return class_weight
-
-
-def plot_roc(name, labels, predictions, **kwargs):
-    fp, tp, threshold = sklearn.metrics.roc_curve(labels, predictions)
-    # print(fp, tp, threshold)
-    plt.plot(100 * fp, 100 * tp, label=name, linewidth=2, **kwargs)
-    plt.xlabel("FP [%]")
-    plt.ylabel("TP [%]")
-    plt.xlim([-0.5, 100])
-    plt.ylim([0, 100.5])
-    plt.legend(loc="lower right")
-
-
-def augment(imgs):
-    res = []
-    for i in range(imgs.shape[0]):
-        image = imgs[i]
-        image_shape = image.shape
-        image = tf.image.resize_with_crop_or_pad(
-            image, image_shape[0] + 6, image_shape[1] + 6
-        )
-        # Random crop back to the original size
-        image = tf.image.random_crop(image, size=image_shape)
-        image = tf.image.random_brightness(image, max_delta=0.5)  # Random brightness
-        res.append(np.expand_dims(image, axis=0))
-    return np.concatenate(res)
 
 
 def main():
