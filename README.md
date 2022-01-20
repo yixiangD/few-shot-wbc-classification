@@ -1,7 +1,9 @@
 # Deep learning model for WBC image classification
 ## Quick start
 ```
-conda install -c forge tensorflow
+conda config --add channels conda-forge
+conda config --set channel_priority strict
+conda install tensorflow==2.4.0
 ```
 Run default code, under the following condition
 1. no data augmentation
