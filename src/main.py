@@ -56,10 +56,6 @@ def transfer_model(metrics):
 
     preprocess_input = tf.keras.applications.mobilenet_v2.preprocess_input
 
-    rescale = tf.keras.layers.experimental.preprocessing.Rescaling(
-        1.0 / 127.5, offset=-1
-    )
-
     # create a base model
     base_model = tf.keras.applications.MobileNetV2(
         input_shape=IMG_SHAPE, include_top=False, weights="imagenet"
@@ -72,13 +68,12 @@ def transfer_model(metrics):
     if AUGMENT:
         x = data_augmentation(inputs)
     x = preprocess_input(inputs)
-    x = rescale(x)
     x = base_model(x, training=False)
     x = global_average_layer(x)
-    x = tf.keras.layers.Dropout(0.2)(x)
-    dim = x.shape[-1]
+    dim = 128
     for _ in range(3):
         x = tf.keras.layers.Dense(dim)(x)
+        x = tf.keras.layers.Dropout(0.2)(x)
 
     prediction_layer = tf.keras.layers.Dense(1, activation="sigmoid")
     outputs = prediction_layer(x)
@@ -129,31 +124,37 @@ def main():
         np.random.shuffle(index)
         train_index[k] = index[: int(split * len(data[k]))]
         test_index[k] = index[int(split * len(data[k])) :]
-        train_x.append(data[k][train_index[k], :, :, :])
-        test_x.append(data[k][test_index[k], :, :, :])
-        train_y_str += [k] * int(split * len(data[k]))
-        test_y_str += [k] * int((1 - split) * len(data[k]))
+        train_x.append(data[k][train_index[k], :, :, :].astype("float32") / 255)
+        test_x.append(data[k][test_index[k], :, :, :].astype("float32") / 255)
+        train_y_str += [k] * len(train_index[k])
+        test_y_str += [k] * len(test_index[k])
     train_x, test_x = np.vstack(train_x), np.vstack(test_x)
     # obtain train_x, train_y, test_x, test_y
     n = len(train_y_str) + len(test_y_str)
+    print("#" * 50)
+    print(" " * 50)
     print(
         "#train {}, #test {}, train r {:.4f}, test r {:.4f}".format(
             len(train_y_str), len(test_y_str), len(train_y_str) / n, len(test_y_str) / n
         )
     )
+    print("#train {}, #test {}, in X view".format(len(train_x), len(test_x)))
 
     # encoding str to labels
     le = LabelEncoder()
     le.fit(train_y_str)
-    print("After label encoding", Counter(le.classes_))
     train_y = le.transform(train_y_str)
     test_y = le.transform(test_y_str)
+    print("After label encoding, train ", Counter(train_y))
+    print("After label encoding, test ", Counter(test_y))
+    print(" " * 50)
+    print("#" * 50)
 
     METRICS = [
-        # tf.keras.metrics.TruePositives(name="tp"),
-        # tf.keras.metrics.FalsePositives(name="fp"),
-        # tf.keras.metrics.TrueNegatives(name="tn"),
-        # tf.keras.metrics.FalseNegatives(name="fn"),
+        tf.keras.metrics.TruePositives(name="tp"),
+        tf.keras.metrics.FalsePositives(name="fp"),
+        tf.keras.metrics.TrueNegatives(name="tn"),
+        tf.keras.metrics.FalseNegatives(name="fn"),
         tf.keras.metrics.BinaryAccuracy(name="accuracy"),
         tf.keras.metrics.Precision(name="precision"),
         tf.keras.metrics.Recall(name="recall"),
@@ -288,6 +289,7 @@ def main():
     plt.xlabel("epoch")
     # plt.savefig('./figs/full_train.png')
 
+    print(test_x.shape, test_y.shape)
     result = model.evaluate(test_x, test_y)
     predictions = model.predict(test_x)
     plt.figure()
