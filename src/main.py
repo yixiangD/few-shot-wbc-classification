@@ -125,14 +125,15 @@ def main():
             cv2.resize(np.squeeze(x), IMG_SIZE, interpolation=cv2.INTER_AREA)
             for x in data[k]
         ]
+        imgs = np.array(imgs)
         # reconcatenate the img such that it looks like N x W x H x C
         # N: number of images, W: width, H: height, C: channel
         index = np.arange(len(imgs))
         np.random.shuffle(index)
         train_index[k] = index[: int(split * len(imgs))]
         test_index[k] = index[int(split * len(imgs)) :]
-        train_x.append(data[k][train_index[k], :, :, :].astype("float32") / 255)
-        test_x.append(data[k][test_index[k], :, :, :].astype("float32") / 255)
+        train_x.append(imgs[train_index[k], :, :, :].astype("float32") / 255)
+        test_x.append(imgs[test_index[k], :, :, :].astype("float32") / 255)
         train_y_str += [k] * len(train_index[k])
         test_y_str += [k] * len(test_index[k])
     train_x, test_x = np.vstack(train_x), np.vstack(test_x)
