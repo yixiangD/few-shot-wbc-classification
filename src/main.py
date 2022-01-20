@@ -1,11 +1,12 @@
 import argparse
 import os
-from collections import defaultdict
+from collections import Counter, defaultdict
 from math import ceil, floor
 
 import matplotlib.pyplot as plt
 import myplotstyle
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 import tensorflow_datasets as tfds
 from hyper import (
@@ -20,26 +21,28 @@ from hyper import (
     initial_epochs,
 )
 from mixup_generator import MixupGenerator, MyMixupGenerator
+from numpy.random import MT19937, RandomState, SeedSequence
 from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import class_weight
 from tensorflow.keras.preprocessing import image_dataset_from_directory
 
 from src.utils import augment, plot_roc
 
 
-def get_data(path, suffix=""):
-    # set up image folder
-    # X, y = [], []
+def get_data(path):
     data = defaultdict(list)
-    cell = ["LYMPHOCYTE", "nonLYMPHOCYTE"]
-    for c in range(2):
-        img_dir = os.path.join(path, cell[c])
-        for root, dirs, files in os.walk(img_dir):
+    for root, dirs, files in os.walk(path):
+        classes = dirs
+        break
+    for cls in classes:
+        img_path = os.path.join(path, cls)
+        for root, dirs, files in os.walk(img_path):
             root, dirs, files = root, dirs, files
             break
         for f in files:
-            img = np.expand_dims(plt.imread("/".join([root, f])), axis=0)
-            data[c].append(img)
+            img = np.expand_dims(plt.imread(os.path.join(root, f)), axis=0)
+            data[cls].append(img)
     return data
 
 
@@ -96,6 +99,8 @@ def main():
     https://www.tensorflow.org/tutorials/images/
     transfer_learning#create_the_base_model_from_the_pre-trained_convnets
     """
+    split = 0.7
+    RandomState(MT19937(SeedSequence(0)))
     parser = argparse.ArgumentParser(description="Specify the data folder path")
     parser.add_argument(
         "--method",
@@ -113,43 +118,42 @@ def main():
     else:
         path = PATH2
     data = get_data(path)
-    for k in data:
+    for k in list(data.keys()):
         data[k] = np.concatenate(data[k])
-    split = 0.7
-    n0 = len(data[0])
-    n1 = len(data[1])
-    if not args.load:
-        train_index0 = np.random.choice(np.arange(n0), ceil(split * n0), replace=False)
-        train_index1 = np.random.choice(np.arange(n1), ceil(split * n1), replace=False)
-        np.savetxt(f"./index/{args.dataset}train_index0.txt", train_index0)
-        np.savetxt(f"./index/{args.dataset}train_index1.txt", train_index1)
-    else:
-        train_index0 = np.loadtxt(f"./index/{args.dataset}train_index0.txt").astype(int)
-        train_index1 = np.loadtxt(f"./index/{args.dataset}train_index1.txt").astype(int)
-    test_index0 = set(np.arange(n0)).difference(set(train_index0))
-    test_index1 = set(np.arange(n1)).difference(set(train_index1))
-    train_x0 = data[0][train_index0]
-    train_x1 = data[1][train_index1]
-    test_x0 = data[0][list(test_index0)]
-    test_x1 = data[1][list(test_index1)]
-    train_x = np.concatenate((train_x0, train_x1))
-    test_x = np.concatenate((test_x0, test_x1))
-    train_y = np.concatenate((np.zeros(ceil(split * n0)), np.ones(ceil(split * n1))))
-    test_y = np.concatenate(
-        (np.zeros(n0 - ceil(split * n0)), np.ones(n1 - ceil(split * n1)))
-    )
-    n = n0 + n1
+    train_index = dict()
+    test_index = dict()
+    train_x, test_x = [], []
+    train_y_str, test_y_str = [], []
+    for k in list(data.keys()):
+        index = np.arange(len(data[k]))
+        np.random.shuffle(index)
+        train_index[k] = index[: int(split * len(data[k]))]
+        test_index[k] = index[int(split * len(data[k])) :]
+        train_x.append(data[k][train_index[k], :, :, :])
+        test_x.append(data[k][test_index[k], :, :, :])
+        train_y_str += [k] * int(split * len(data[k]))
+        test_y_str += [k] * int((1 - split) * len(data[k]))
+    train_x, test_x = np.vstack(train_x), np.vstack(test_x)
+    # obtain train_x, train_y, test_x, test_y
+    n = len(train_y_str) + len(test_y_str)
     print(
         "#train {}, #test {}, train r {:.4f}, test r {:.4f}".format(
-            len(train_y), len(test_y), len(train_y) / n, len(test_y) / n
+            len(train_y_str), len(test_y_str), len(train_y_str) / n, len(test_y_str) / n
         )
     )
 
+    # encoding str to labels
+    le = LabelEncoder()
+    le.fit(train_y_str)
+    print("After label encoding", Counter(le.classes_))
+    train_y = le.transform(train_y_str)
+    test_y = le.transform(test_y_str)
+
     METRICS = [
-        tf.keras.metrics.TruePositives(name="tp"),
-        tf.keras.metrics.FalsePositives(name="fp"),
-        tf.keras.metrics.TrueNegatives(name="tn"),
-        tf.keras.metrics.FalseNegatives(name="fn"),
+        # tf.keras.metrics.TruePositives(name="tp"),
+        # tf.keras.metrics.FalsePositives(name="fp"),
+        # tf.keras.metrics.TrueNegatives(name="tn"),
+        # tf.keras.metrics.FalseNegatives(name="fn"),
         tf.keras.metrics.BinaryAccuracy(name="accuracy"),
         tf.keras.metrics.Precision(name="precision"),
         tf.keras.metrics.Recall(name="recall"),
@@ -187,7 +191,7 @@ def main():
 
     total_epochs = initial_epochs + fine_tune_epochs
     class_weights = class_weight.compute_class_weight(
-        "balanced", np.unique(train_y), train_y
+        class_weight="balanced", classes=np.unique(train_y), y=train_y
     )
     class_weights = dict(enumerate(class_weights))
     # class_weights = compute_weight(13, 129)

@@ -3,6 +3,12 @@
 ```
 conda install -c forge tensorflow
 ```
+Run default code, under the following condition
+1. no data augmentation
+2. raw dataset
+```
+python src/main.py
+```
 ## Dataset:
 - Raw dataset (data/raw2/): WBC images with RBCs. We used *dataset-master* and *dataset2-master* in the [kaggle dataset](https://www.kaggle.com/paultimothymooney/blood-cells).
 - Masked dataset (data/masked/): WBC images with RBCs pixels removed. In addition to the raw images, we used the corresponding annotations from [BCCD_Dataset](https://www.kaggle.com/surajiiitm/bccd-dataset).
