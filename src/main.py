@@ -3,6 +3,7 @@ import os
 from collections import Counter, defaultdict
 from math import ceil, floor
 
+import cv2
 import matplotlib.pyplot as plt
 import myplotstyle
 import numpy as np
@@ -113,17 +114,23 @@ def main():
     else:
         path = PATH2
     data = get_data(path)
-    for k in list(data.keys()):
-        data[k] = np.concatenate(data[k])
-    train_index = dict()
-    test_index = dict()
     train_x, test_x = [], []
     train_y_str, test_y_str = [], []
+    train_index = dict()
+    test_index = dict()
     for k in list(data.keys()):
-        index = np.arange(len(data[k]))
+        # for x in data[k]:
+        #    print(x.shape)
+        imgs = [
+            cv2.resize(np.squeeze(x), IMG_SIZE, interpolation=cv2.INTER_AREA)
+            for x in data[k]
+        ]
+        # reconcatenate the img such that it looks like N x W x H x C
+        # N: number of images, W: width, H: height, C: channel
+        index = np.arange(len(imgs))
         np.random.shuffle(index)
-        train_index[k] = index[: int(split * len(data[k]))]
-        test_index[k] = index[int(split * len(data[k])) :]
+        train_index[k] = index[: int(split * len(imgs))]
+        test_index[k] = index[int(split * len(imgs)) :]
         train_x.append(data[k][train_index[k], :, :, :].astype("float32") / 255)
         test_x.append(data[k][test_index[k], :, :, :].astype("float32") / 255)
         train_y_str += [k] * len(train_index[k])

@@ -1,8 +1,8 @@
 BATCH_SIZE = 32
 LEARNING_RATE = 1e-4
-PATH1 = "./data/raw2"
+PATH1 = "./data/PBC_dataset_normal_DIB"
 PATH2 = "./data/masked"
-IMG_SIZE = (480, 640)
+IMG_SIZE = (480, 480)
 IMG_SHAPE = IMG_SIZE + (3,)
 initial_epochs = 10
 fine_tune_epochs = 40
