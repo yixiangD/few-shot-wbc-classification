@@ -1,3 +1,3 @@
 from setuptools import find_packages, setup
 
-setup(name="bionet", version="0.0.1", packages=find_packages())
+setup(name="few_shot_wbc", version="0.0.1", packages=find_packages())
