@@ -31,7 +31,7 @@ def main():
     else:
         df_coord = get_crop_coord(df_label, crop_coord_path)
     # load image
-    print(df_coord)
+    # print(df_coord)
     for i in range(df_coord.shape[0]):
         fname = "_".join(["BloodImage", str(df_coord.loc[i]["Image"]).zfill(5)])
         img_file = fname + ".jpg"
