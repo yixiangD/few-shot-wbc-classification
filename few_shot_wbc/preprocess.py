@@ -30,8 +30,12 @@ def main():
         df_coord = pd.read_csv(crop_coord_path)
     else:
         df_coord = get_crop_coord(df_label, crop_coord_path)
-    # load image
-    # print(df_coord)
+    # load image and crop
+    crop0 = os.path.join("./data", "all_CELL_data-master", "crop_00000.jpg")
+    if os.path.exists(crop0):
+        print(f"Found cropped image in {crop0}, exiting.")
+        exit()
+
     for i in range(df_coord.shape[0]):
         fname = "_".join(["BloodImage", str(df_coord.loc[i]["Image"]).zfill(5)])
         img_file = fname + ".jpg"
