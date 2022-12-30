@@ -33,7 +33,7 @@ The expected cell counts for each class,
 
 |Cell type| NEUTROPHIL|EOSINOPHIL|LYMPHOCYTE|MONOCYTE|BASOPHIL|
 | --- | ----------- |----------- |----------- |----------- |----------- |
-|Cell count| 205|87|33|20| 3|
+|Cell count| 203|83|33|20| 3|
 
 ### Spilt images into train and test folder
 Here, we create train and test folders for our model. Available arguments:
