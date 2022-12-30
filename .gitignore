@@ -13,3 +13,5 @@ PBC_dataset_normal_DIB/
 index
 *class_*fold*
 all_CELL_data-master
+*.sh
+*.out
