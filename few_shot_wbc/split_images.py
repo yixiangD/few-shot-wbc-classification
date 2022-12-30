@@ -52,15 +52,17 @@ def main():
         df = df_clean.sample(frac=1).reset_index(drop=True)
     else:
         df = df_clean.copy()
+
     if args.crop:
         fold_name += "_crop"
+        prefix = "crop"
+    else:
+        prefix = "BloodImage"
 
     if args.num_class == 2:
         lab = "Lympho"
-        prefix = "crop"
     else:
         lab = "Category"
-        prefix = "BloodImage"
         # exclude basophil
         df = df[df["Category"] != "BASOPHIL"]
         # print(Counter(df["Category"]))
@@ -83,13 +85,16 @@ def main():
         os.makedirs(test_path)
     else:
         # clear path before copying images
-        print("Deleting old train folder...")
+        print("Deleting old test folder...")
         shutil.rmtree(test_path)
         os.makedirs(test_path)
 
-    for root, dirs, files in os.walk(path):
-        root, dirs, files = root, dirs, files
-        break
+    # for root, dirs, files in os.walk(path):
+    #    root, dirs, files = root, dirs, files
+    #    break
+    for cls in df[lab].unique():
+        os.makedirs(os.path.join(train_path, cls))
+        os.makedirs(os.path.join(test_path, cls))
 
     sampler = StratifiedShuffleSplit(
         n_splits=1, test_size=1 / float(args.nfold), random_state=0
@@ -100,17 +105,20 @@ def main():
         print(f"Train: {train_id}")
         print(f"Test: {test_id}")
         print("Sanity check...")
-        print(df)
         print(Counter(df.loc[df.index.isin(train_id), lab].values))
         print(Counter(df.loc[df.index.isin(test_id), lab].values))
-        x_train = df.loc[df.index.isin(train_id), "Image"].values
-        x_test = df.loc[df.index.isin(test_id), "Image"].values
-        for index in x_train:
+        for ind in train_id:
+            row = df.iloc[ind]
+            index = row["Image"]
             fname = prefix + "_" + str(index).zfill(5) + ".jpg"
-            shutil.copy(os.path.join(path, fname), os.path.join(train_path, fname))
-        for index in x_test:
+            cls = row[lab]
+            shutil.copy(os.path.join(path, fname), os.path.join(train_path, cls, fname))
+        for ind in test_id:
+            row = df.iloc[ind]
+            index = row["Image"]
             fname = prefix + "_" + str(index).zfill(5) + ".jpg"
-            shutil.copy(os.path.join(path, fname), os.path.join(test_path, fname))
+            cls = row[lab]
+            shutil.copy(os.path.join(path, fname), os.path.join(test_path, cls, fname))
 
 
 if __name__ == "__main__":
