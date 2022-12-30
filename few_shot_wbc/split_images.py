@@ -36,6 +36,10 @@ def main():
     # reading table of labels and image names
     clean_path = "./data/labels_clean.csv"
     df_clean = pd.read_csv(clean_path, usecols=[1, 2])
+    wbc_path = "./data/wbc_coord.csv"
+    df_wbc = pd.read_csv(wbc_path)
+    df_clean = pd.merge(df_clean, df_wbc, on="Image")
+
     df_clean["Lympho"] = np.where(
         df_clean["Category"] == "LYMPHOCYTE", "LYMPHOCYTE", "nonLYMPHOCYTE"
     )
@@ -96,14 +100,12 @@ def main():
         print(f"Train: {train_id}")
         print(f"Test: {test_id}")
         print("Sanity check...")
-        print(Counter(df.iloc[train_id, 2]))
-        print(Counter(df.iloc[test_id, 2]))
-        print(df.iloc[train_id, :])
-        x_train = df.iloc[train_id, 0].values
-        x_test = df.iloc[test_id, 0].values
-        print(x_train)
+        print(df)
+        print(Counter(df.loc[df.index.isin(train_id), lab].values))
+        print(Counter(df.loc[df.index.isin(test_id), lab].values))
+        x_train = df.loc[df.index.isin(train_id), "Image"].values
+        x_test = df.loc[df.index.isin(test_id), "Image"].values
         for index in x_train:
-            print(index)
             fname = prefix + "_" + str(index).zfill(5) + ".jpg"
             shutil.copy(os.path.join(path, fname), os.path.join(train_path, fname))
         for index in x_test:
