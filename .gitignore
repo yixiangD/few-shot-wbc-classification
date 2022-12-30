@@ -11,4 +11,5 @@ figs/
 PBC_dataset_normal_DIB/
 *egg-info
 index
-data/
+*class_*fold*
+all_CELL_data-master
