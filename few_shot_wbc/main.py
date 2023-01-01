@@ -1,6 +1,6 @@
 import argparse
-import time
 import os
+import time
 
 import torch
 import torch.nn as nn
@@ -22,6 +22,9 @@ def main():
         help="path contains train/ and test/ folders",
     )
     parser.add_argument(
+        "--out_path", type=str, default="outputs", help="output folder path"
+    )
+    parser.add_argument(
         "--epochs",
         type=int,
         default=20,
@@ -37,6 +40,8 @@ def main():
         print(f"Data path {args.path} not found, exiting...")
         exit()
 
+    if not os.path.exists(args.out_path):
+        os.makedirs(args.out_path)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Computation device: {device}\n")
     model = SimpleCNN().to(device)
@@ -64,7 +69,9 @@ def main():
             train_epoch_loss, train_epoch_acc = train(
                 model, train_loader, optimizer, criterion, device
             )
-            test_epoch_loss, test_epoch_acc = test(model, test_loader, criterion, device)
+            test_epoch_loss, test_epoch_acc = test(
+                model, test_loader, criterion, device
+            )
             train_loss.append(train_epoch_loss)
             test_loss.append(test_epoch_loss)
             train_acc.append(train_epoch_acc)
@@ -76,9 +83,10 @@ def main():
             print("-" * 50)
             time.sleep(5)
         # save the trained model weights
-        save_model(args.epochs, model, optimizer, criterion)
+        print(f"Saving model and loss history to {args.out_path}")
+        save_model(args.out_path, args.epochs, model, optimizer, criterion)
         # save the loss and accuracy plots
-        save_plots(train_acc, test_acc, train_loss, test_loss)
+        save_plots(args.out_path, train_acc, test_acc, train_loss, test_loss)
         print("TRAINING COMPLETE")
 
 
