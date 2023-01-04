@@ -17,6 +17,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--train", action="store_true", help="start training")
     parser.add_argument(
+        "--pretrained",
+        action="store_true",
+        help="load pretrained weights for torchvision models",
+    )
+    parser.add_argument(
         "--path",
         default="data/2class_5fold",
         type=str,
@@ -64,7 +69,7 @@ def main():
     if args.model == "simple":
         model = SimpleCNN().to(device)
     else:
-        model = TorchVisionModel().to(device)
+        model = TorchVisionModel(args.model, args.pretrained).to(device)
     print(model)
     # total parameters and trainable parameters
     total_params = sum(p.numel() for p in model.parameters())
