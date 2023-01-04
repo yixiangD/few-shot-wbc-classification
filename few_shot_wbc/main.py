@@ -1,6 +1,6 @@
 import argparse
-import time
 import os
+import time
 
 import torch
 import torch.nn as nn
@@ -8,7 +8,7 @@ import torch.optim as optim
 from tqdm.auto import tqdm
 
 from few_shot_wbc.datasets import get_data_loader
-from few_shot_wbc.model import SimpleCNN
+from few_shot_wbc.model import SimpleCNN, TorchVisionModel
 from few_shot_wbc.transforms import test_transform, train_transform
 from few_shot_wbc.utils import save_model, save_plots, test, train
 
@@ -19,7 +19,23 @@ def main():
     parser.add_argument(
         "--path",
         default="data/2class_5fold",
+        type=str,
         help="path contains train/ and test/ folders",
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="simple",
+        choices=[
+            "simple",
+            "alexnet",
+            "vgg",
+            "resnet",
+            "densenet",
+            "mobilenet",
+            "resnext",
+        ],
+        help="name of cnn model",
     )
     parser.add_argument(
         "--epochs",
@@ -39,7 +55,11 @@ def main():
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Computation device: {device}\n")
-    model = SimpleCNN().to(device)
+
+    if args.model == "simple":
+        model = SimpleCNN().to(device)
+    else:
+        model = TorchVisionModel().to(device)
     print(model)
     # total parameters and trainable parameters
     total_params = sum(p.numel() for p in model.parameters())
@@ -64,7 +84,9 @@ def main():
             train_epoch_loss, train_epoch_acc = train(
                 model, train_loader, optimizer, criterion, device
             )
-            test_epoch_loss, test_epoch_acc = test(model, test_loader, criterion, device)
+            test_epoch_loss, test_epoch_acc = test(
+                model, test_loader, criterion, device
+            )
             train_loss.append(train_epoch_loss)
             test_loss.append(test_epoch_loss)
             train_acc.append(train_epoch_acc)

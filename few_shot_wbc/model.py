@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torch.nn.functional as F
+import torchvision.models as models
 
 
 class SimpleCNN(nn.Module):
@@ -21,3 +22,26 @@ class SimpleCNN(nn.Module):
         x = F.adaptive_avg_pool2d(x, 1).reshape(bs, -1)
         x = self.fc1(x)
         return x
+
+
+class TorchVisionModel(nn.Module):
+    def __ini__(self, name, pretrain):
+        super(TorchVisionModel, self).__init__(name)
+        name_list = ["alexnet", "vgg", "resnet", "densenet", "mobilenet", "resnext"]
+        assert name in name_list
+        assert pretrain in [True, False]
+        if name == "alexnet":
+            self._model = models.alexnet(pretrained=pretrain)
+        elif name == "vgg":
+            self._model = models.vgg19(pretrained=pretrain)
+        elif name == "resnet":
+            self._model = models.resnet152(pretrained=pretrain)
+        elif name == "densenet":
+            self._model = models.densenet161(pretrained=pretrain)
+        elif name == "mobilenet":
+            self._model = models.mobilenet_v2(pretrained=pretrain)
+        elif name == "resnext":
+            self._model = models.resnext101_32x8d(pretrained=pretrain)
+
+    def forward(self, x):
+        return self._model(x)
