@@ -39,6 +39,7 @@ def main():
             "densenet",
             "mobilenet",
             "resnext",
+            "efficientnet",
         ],
         help="name of cnn model",
     )

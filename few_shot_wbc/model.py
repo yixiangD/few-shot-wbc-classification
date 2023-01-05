@@ -27,7 +27,15 @@ class SimpleCNN(nn.Module):
 class TorchVisionModel(nn.Module):
     def __init__(self, name="alexnet", pretrained=False):
         super(TorchVisionModel, self).__init__()
-        name_list = ["alexnet", "vgg", "resnet", "densenet", "mobilenet", "resnext"]
+        name_list = [
+            "alexnet",
+            "vgg",
+            "resnet",
+            "densenet",
+            "mobilenet",
+            "resnext",
+            "efficientnet",
+        ]
         assert name in name_list
         assert pretrained in [True, False]
         if name == "alexnet":
@@ -42,6 +50,8 @@ class TorchVisionModel(nn.Module):
             self._model = models.mobilenet_v2(pretrained=pretrained)
         elif name == "resnext":
             self._model = models.resnext101_32x8d(pretrained=pretrained)
+        elif name == "efficientnet":
+            self._model = models.efficientnet_b3(pretrained=pretrained)
 
     def forward(self, x):
         return self._model(x)
