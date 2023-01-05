@@ -2,6 +2,7 @@ import argparse
 import os
 import time
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -10,7 +11,7 @@ from tqdm.auto import tqdm
 from few_shot_wbc.datasets import get_data_loader
 from few_shot_wbc.model import SimpleCNN, TorchVisionModel
 from few_shot_wbc.transforms import test_transform, train_transform
-from few_shot_wbc.utils import save_model, save_plots, test, train
+from few_shot_wbc.utils import save_model, save_output, save_plots, test, train
 
 
 def main():
@@ -66,11 +67,11 @@ def main():
         os.makedirs(args.out_path)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Computation device: {device}\n")
-
+    nclass = 2
     if args.model == "simple":
-        model = SimpleCNN().to(device)
+        model = SimpleCNN(nclass).to(device)
     else:
-        model = TorchVisionModel(args.model, args.pretrained).to(device)
+        model = TorchVisionModel(nclass, args.model, args.pretrained).to(device)
     print(model)
     # total parameters and trainable parameters
     total_params = sum(p.numel() for p in model.parameters())
@@ -88,20 +89,25 @@ def main():
     )
     train_loss, test_loss = [], []
     train_acc, test_acc = [], []
+    train_prob, test_prob = np.empty((0, nclass), float), np.empty((0, nclass), float)
     # start the training
     if args.train:
         for epoch in range(args.epochs):
             print(f"[INFO]: Epoch {epoch + 1} of {args.epochs}")
-            train_epoch_loss, train_epoch_acc = train(
+            train_epoch_loss, train_epoch_acc, train_epoch_prob = train(
                 model, train_loader, optimizer, criterion, device
             )
-            test_epoch_loss, test_epoch_acc = test(
+            test_epoch_loss, test_epoch_acc, test_epoch_prob = test(
                 model, test_loader, criterion, device
             )
             train_loss.append(train_epoch_loss)
             test_loss.append(test_epoch_loss)
             train_acc.append(train_epoch_acc)
             test_acc.append(test_epoch_acc)
+            for x in train_epoch_prob:
+                train_prob = np.append(train_prob, x.cpu().numpy(), axis=0)
+            for x in test_epoch_prob:
+                test_prob = np.append(test_prob, x.cpu().numpy(), axis=0)
             print(
                 f"Training loss: {train_epoch_loss:.3f}, training acc: {train_epoch_acc:.3f}"
             )
@@ -112,6 +118,7 @@ def main():
         print(f"Saving model and loss history to {args.out_path}")
         save_model(args.out_path, args.epochs, model, optimizer, criterion)
         # save the loss and accuracy plots
+        save_output(args.out_path, train_prob, test_prob)
         save_plots(args.out_path, train_acc, test_acc, train_loss, test_loss)
         print("TRAINING COMPLETE")
 

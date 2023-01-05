@@ -4,13 +4,13 @@ import torchvision.models as models
 
 
 class SimpleCNN(nn.Module):
-    def __init__(self):
+    def __init__(self, out):
         super(SimpleCNN, self).__init__()
         self.conv1 = nn.Conv2d(3, 32, 5)
         self.conv2 = nn.Conv2d(32, 64, 5)
         self.conv3 = nn.Conv2d(64, 128, 3)
         self.conv4 = nn.Conv2d(128, 256, 5)
-        self.fc1 = nn.Linear(256, 50)
+        self.fc1 = nn.Linear(256, out)
         self.pool = nn.MaxPool2d(2, 2)
 
     def forward(self, x):
@@ -21,11 +21,11 @@ class SimpleCNN(nn.Module):
         bs, _, _, _ = x.shape
         x = F.adaptive_avg_pool2d(x, 1).reshape(bs, -1)
         x = self.fc1(x)
-        return x
+        return F.softmax(x, dim=1)
 
 
 class TorchVisionModel(nn.Module):
-    def __init__(self, name="alexnet", pretrained=False):
+    def __init__(self, out, name="alexnet", pretrained=False):
         super(TorchVisionModel, self).__init__()
         name_list = [
             "alexnet",
@@ -36,8 +36,10 @@ class TorchVisionModel(nn.Module):
             "resnext",
             "efficientnet",
         ]
+
         assert name in name_list
         assert pretrained in [True, False]
+        last_layer_nfeat = 1000
         if name == "alexnet":
             self._model = models.alexnet(pretrained=pretrained)
         elif name == "vgg":
@@ -52,6 +54,9 @@ class TorchVisionModel(nn.Module):
             self._model = models.resnext101_32x8d(pretrained=pretrained)
         elif name == "efficientnet":
             self._model = models.efficientnet_b3(pretrained=pretrained)
+        self.fc1 = nn.Linear(last_layer_nfeat, out)
 
     def forward(self, x):
-        return self._model(x)
+        x = self._model(x)
+        x = self.fc1(x)
+        return F.softmax(x, dim=1)
