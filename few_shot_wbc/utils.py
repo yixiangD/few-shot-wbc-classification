@@ -27,7 +27,9 @@ def train(model, trainloader, optimizer, criterion, device):
         loss = criterion(outputs, labels)
         train_loss += loss.item()
         _, preds = torch.max(outputs.data, 1)
-        probs.append(outputs.data)
+        probs.append(
+            torch.cat((outputs.data, torch.reshape(labels, (labels.size(0), 1))), 1)
+        )
         train_correct += (preds == labels).sum().item()
         # backward propagation: compute gradient for differiatable params
         loss.backward()
@@ -59,7 +61,9 @@ def test(model, testloader, criterion, device):
             test_loss += loss.item()
             # calculate the accuracy
             _, preds = torch.max(outputs.data, 1)
-            probs.append(outputs.data)
+            probs.append(
+                torch.cat((outputs.data, torch.reshape(labels, (labels.size(0), 1))), 1)
+            )
             test_correct += (preds == labels).sum().item()
     epoch_loss = test_loss / count
     epoch_acc = 100.0 * (test_correct / len(testloader.dataset))
@@ -106,10 +110,11 @@ def save_plots(out_path, train_acc, test_acc, train_loss, test_loss):
 
 def save_output(out_path, train_prob, test_prob):
     """
-    Function to save tabular data output
+    Function to save tabular data output; probs and labels
     """
     # accuracy plots
-    df = pd.DataFrame(train_prob, columns=["p0", "p1"])
+    cols = [str(x) for x in range(np.shape(train_prob)[1] - 1)] + ["y_test"]
+    df = pd.DataFrame(train_prob, columns=cols)
     df.to_csv(f"{out_path}/train_probs.csv", index=False)
-    df = pd.DataFrame(test_prob, columns=["p0", "p1"], index=False)
-    df.to_csv(f"{out_path}/test_probs.csv")
+    df = pd.DataFrame(test_prob, columns=cols)
+    df.to_csv(f"{out_path}/test_probs.csv", index=False)

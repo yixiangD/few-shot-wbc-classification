@@ -89,7 +89,9 @@ def main():
     )
     train_loss, test_loss = [], []
     train_acc, test_acc = [], []
-    train_prob, test_prob = np.empty((0, nclass), float), np.empty((0, nclass), float)
+    train_prob, test_prob = np.empty((0, nclass + 1), float), np.empty(
+        (0, nclass + 1), float
+    )
     # start the training
     if args.train:
         for epoch in range(args.epochs):
@@ -117,8 +119,8 @@ def main():
         # save the trained model weights
         print(f"Saving model and loss history to {args.out_path}")
         save_model(args.out_path, args.epochs, model, optimizer, criterion)
-        # save the loss and accuracy plots
         save_output(args.out_path, train_prob, test_prob)
+        # save the loss and accuracy plots
         save_plots(args.out_path, train_acc, test_acc, train_loss, test_loss)
         print("TRAINING COMPLETE")
 
