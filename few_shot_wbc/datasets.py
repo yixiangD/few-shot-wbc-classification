@@ -9,14 +9,14 @@ def get_data_loader(data_path, train_transform, test_transform, batch_size):
         train_dataset,
         batch_size=batch_size,
         shuffle=True,
-        num_workers=4,
+        num_workers=1,
         pin_memory=True,
     )
     test_loader = DataLoader(
         test_dataset,
         batch_size=batch_size,
         shuffle=False,
-        num_workers=4,
+        num_workers=1,
         pin_memory=True,
     )
     return train_loader, test_loader
