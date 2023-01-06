@@ -89,9 +89,6 @@ def main():
     )
     train_loss, test_loss = [], []
     train_acc, test_acc = [], []
-    train_prob, test_prob = np.empty((0, nclass + 1), float), np.empty(
-        (0, nclass + 1), float
-    )
     # start the training
     if args.train:
         for epoch in range(args.epochs):
@@ -106,16 +103,14 @@ def main():
             test_loss.append(test_epoch_loss)
             train_acc.append(train_epoch_acc)
             test_acc.append(test_epoch_acc)
-            for x in train_epoch_prob:
-                train_prob = np.append(train_prob, x.cpu().numpy(), axis=0)
-            for x in test_epoch_prob:
-                test_prob = np.append(test_prob, x.cpu().numpy(), axis=0)
             print(
                 f"Training loss: {train_epoch_loss:.3f}, training acc: {train_epoch_acc:.3f}"
             )
             print(f"Test loss: {test_epoch_loss:.3f}, test acc: {test_epoch_acc:.3f}")
             print("-" * 50)
             time.sleep(5)
+        train_prob = np.vstack([x.cpu().numpy() for x in train_epoch_prob])
+        test_prob = np.vstack([x.cpu().numpy() for x in test_epoch_prob])
         # save the trained model weights
         print(f"Saving model and loss history to {args.out_path}")
         save_model(args.out_path, args.epochs, model, optimizer, criterion)
