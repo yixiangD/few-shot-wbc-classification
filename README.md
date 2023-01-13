@@ -50,13 +50,21 @@ python few_shot_wbc/split_images.py
 ## Methodology
 
 ### CNN Model
-Transfer learning with Mobile-Net
+Transfer learning with 
 
-### Methods for Data Imbalance
-- Class weighting
-- Oversampling
-- Mixup ([Zhang et al. 2018](https://arxiv.org/pdf/1710.09412.pdf))
-- Minority Mixup: perform oversampling using mixup
+- AlexNet
+- VGG19
+- ResNet152
+- DenseNet
+- MobileNetV2
+- ResNext101_32x8d
+- EfficientNet b3
+
+
+### Methods for Data Imbalance (TODO)
+- Class weighting: [pytorch](https://discuss.pytorch.org/t/dealing-with-imbalanced-datasets-in-pytorch/22596)
+- Oversampling: [dataset sampler](https://github.com/ufoym/imbalanced-dataset-sampler)
+- Minority Mixup: perform oversampling using [mixup](https://arxiv.org/pdf/1710.09412.pdf)
 
 
 ## Reference:
