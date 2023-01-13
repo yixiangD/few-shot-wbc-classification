@@ -100,10 +100,10 @@ def main():
     # optimizer
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     # loss function
-    new_weight = 1
+    new_weight = [1.0, 1.0]
     if args.data_imb == "reweight":
-        new_weight = float(args.imb_param)
-    criterion = nn.CrossEntropyLoss(weight=new_weight)
+        new_weight = [1, args.imb_param]
+    criterion = nn.CrossEntropyLoss(weight=torch.Tensor(new_weight).to(device))
     train_loader, test_loader = get_data_loader(
         args.path, train_transform, test_transform, args.batch_size
     )
