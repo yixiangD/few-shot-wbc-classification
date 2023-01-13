@@ -48,6 +48,16 @@ def main():
         "--out_path", type=str, default="outputs", help="output folder path"
     )
     parser.add_argument(
+        "--data_imb",
+        type=str,
+        default=None,
+        choices=["reweight", "oversample", "mixup"],
+        help="data augmentation to deal with the imbalance of classes/labels",
+    )
+    parser.add_argument(
+        "--imb_param", type=float, default=None, help="parameters for data augmentation"
+    )
+    parser.add_argument(
         "--epochs",
         type=int,
         default=20,
@@ -58,6 +68,13 @@ def main():
     )
     parser.add_argument("--lr", type=int, default=1e-3, help="learning rate")
     args = parser.parse_args()
+
+    if args.data_imb:
+        if not args.imb_param:
+            print(
+                f"{args.data_imb} data augmentation requested but parameter not given, exiting..."
+            )
+            exit()
 
     if not os.path.exists(args.path):
         print(f"Data path {args.path} not found, exiting...")
@@ -83,7 +100,10 @@ def main():
     # optimizer
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     # loss function
-    criterion = nn.CrossEntropyLoss()
+    new_weight = 1
+    if args.data_imb == "reweight":
+        new_weight = float(args.imb_param)
+    criterion = nn.CrossEntropyLoss(weight=new_weight)
     train_loader, test_loader = get_data_loader(
         args.path, train_transform, test_transform, args.batch_size
     )
