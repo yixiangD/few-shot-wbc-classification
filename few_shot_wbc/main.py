@@ -51,7 +51,7 @@ def main():
         "--data_imb",
         type=str,
         default=None,
-        choices=["reweight", "oversample", "mixup"],
+        choices=["reweight", "resample", "mixup"],
         help="data augmentation to deal with the imbalance of classes/labels",
     )
     parser.add_argument(
@@ -69,10 +69,10 @@ def main():
     parser.add_argument("--lr", type=int, default=1e-3, help="learning rate")
     args = parser.parse_args()
 
-    if args.data_imb:
+    if args.data_imb in ["reweight", "mixup"]:
         if not args.imb_param:
             print(
-                f"{args.data_imb} data augmentation requested but parameter not given, exiting..."
+                f"Model parameter for {args.data_imb} data augmentation needed but missing, exiting..."
             )
             exit()
 
@@ -105,7 +105,7 @@ def main():
         new_weight = [1, args.imb_param]
     criterion = nn.CrossEntropyLoss(weight=torch.Tensor(new_weight).to(device))
     train_loader, test_loader = get_data_loader(
-        args.path, train_transform, test_transform, args.batch_size
+        args.path, train_transform, test_transform, args.batch_size, args.data_imb
     )
     train_loss, test_loss = [], []
     train_acc, test_acc = [], []
