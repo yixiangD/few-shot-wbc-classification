@@ -63,8 +63,8 @@ Transfer learning with
 
 ### Methods for Data Imbalance (TODO)
 - Class weighting: [pytorch](https://discuss.pytorch.org/t/dealing-with-imbalanced-datasets-in-pytorch/22596)
-- Oversampling: [dataset sampler](https://github.com/ufoym/imbalanced-dataset-sampler)
-- Minority Mixup: perform oversampling using [mixup](https://arxiv.org/pdf/1710.09412.pdf)
+- Traindata resampling: [dataset sampler](https://github.com/ufoym/imbalanced-dataset-sampler)
+- Minority Mixup: perform oversampling using mixup ([paper](https://arxiv.org/pdf/1710.09412.pdf), [code](https://github.com/facebookresearch/mixup-cifar10)).
 
 
 ## Reference:
