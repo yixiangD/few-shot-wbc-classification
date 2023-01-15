@@ -114,7 +114,7 @@ def main():
         for epoch in range(args.epochs):
             print(f"[INFO]: Epoch {epoch + 1} of {args.epochs}")
             train_epoch_loss, train_epoch_acc, train_epoch_prob = train(
-                model, train_loader, optimizer, criterion, device
+                model, train_loader, optimizer, criterion, device, args
             )
             test_epoch_loss, test_epoch_acc, test_epoch_prob = test(
                 model, test_loader, criterion, device

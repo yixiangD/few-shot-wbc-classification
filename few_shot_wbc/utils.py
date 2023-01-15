@@ -8,7 +8,7 @@ from tqdm.auto import tqdm
 matplotlib.style.use("ggplot")
 
 
-def train(model, trainloader, optimizer, criterion, device):
+def train(model, trainloader, optimizer, criterion, device, args):
     model.train()
     # print("Training")
     train_loss = 0.0
@@ -20,11 +20,22 @@ def train(model, trainloader, optimizer, criterion, device):
         image, labels = data
         image = image.to(device)
         labels = labels.to(device)
+        if args.data_imb == "mixup":
+            alpha = torch.Tensor(args.imb_param).to(device)
+            image, label_a, label_b, lam = mixup_data(
+                image, labels, alpha, device == "cuda"
+            )
+            image, label_a, label_b = map(
+                torch.autograd.Variable, (image, label_a, label_b)
+            )
         optimizer.zero_grad()
         # forward pass
         outputs = model(image)
         # calculate the loss
-        loss = criterion(outputs, labels)
+        if args.data_imb == "mixup":
+            loss = mixup_criterion(criterion, outputs, label_a, label_b, lam)
+        else:
+            loss = criterion(outputs, labels)
         train_loss += loss.item()
         _, preds = torch.max(outputs.data, 1)
         probs.append(
@@ -118,3 +129,23 @@ def save_output(out_path, train_prob, test_prob):
     df.to_csv(f"{out_path}/train_probs.csv", index=False)
     df = pd.DataFrame(test_prob, columns=cols)
     df.to_csv(f"{out_path}/test_probs.csv", index=False)
+
+
+def mixup_data(x, y, alpha=1.0, use_cuda=True):
+    """Returns mixed inputs, pairs of targets, and lambda"""
+    if alpha > 0:
+        lam = np.random.beta(alpha, alpha)
+    else:
+        lam = 1
+    batch_size = x.size()[0]
+    if use_cuda:
+        index = torch.randperm(batch_size).cuda()
+    else:
+        index = torch.randperm(batch_size)
+    mixed_x = lam * x + (1 - lam) * x[index, :]
+    y_a, y_b = y, y[index]
+    return mixed_x, y_a, y_b, lam
+
+
+def mixup_criterion(criterion, pred, y_a, y_b, lam):
+    return lam * criterion(pred, y_a) + (1 - lam) * criterion(pred, y_b)
