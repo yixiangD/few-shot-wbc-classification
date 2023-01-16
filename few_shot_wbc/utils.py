@@ -21,7 +21,7 @@ def train(model, trainloader, optimizer, criterion, device, args):
         image = image.to(device)
         labels = labels.to(device)
         if args.data_imb == "mixup":
-            alpha = torch.Tensor(args.imb_param).to(device)
+            alpha = args.imb_param
             image, label_a, label_b, lam = mixup_data(
                 image, labels, alpha, device == "cuda"
             )
