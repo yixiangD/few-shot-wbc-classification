@@ -7,7 +7,6 @@ from tqdm.auto import tqdm
 
 matplotlib.style.use("ggplot")
 matplotlib.rcParams["pdf.fonttype"] = 42
-matplotlib.rcParams["font.family"] = "cursive"
 
 
 def train(model, trainloader, optimizer, criterion, device, args):
