@@ -133,6 +133,8 @@ def main():
         test_prob = np.vstack([x.cpu().numpy() for x in test_epoch_prob])
         # save the trained model weights
         print(f"Saving model and loss history to {args.out_path}")
+        np.save(os.path.join(args.out_path, "loss"), [train_loss, test_loss])
+        np.save(os.path.join(args.out_path, "acc"), [train_acc, test_acc])
         save_model(args.out_path, args.epochs, model, optimizer, criterion)
         save_output(args.out_path, train_prob, test_prob)
         # save the loss and accuracy plots

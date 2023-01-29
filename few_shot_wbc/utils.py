@@ -6,6 +6,8 @@ import torch
 from tqdm.auto import tqdm
 
 matplotlib.style.use("ggplot")
+matplotlib.rcParams["pdf.fonttype"] = 42
+matplotlib.rcParams["font.family"] = "cursive"
 
 
 def train(model, trainloader, optimizer, criterion, device, args):
@@ -101,22 +103,22 @@ def save_plots(out_path, train_acc, test_acc, train_loss, test_loss):
     Function to save the loss and accuracy plots to disk.
     """
     # accuracy plots
-    plt.figure(figsize=(10, 7))
+    plt.figure(figsize=(4, 3))
     plt.plot(train_acc, color="green", linestyle="-", label="train accuracy")
     plt.plot(test_acc, color="blue", linestyle="-", label="test accuracy")
     plt.xlabel("Epochs")
     plt.ylabel("Accuracy")
     plt.legend()
-    plt.savefig(f"{out_path}/accuracy.png")
+    plt.savefig(f"{out_path}/accuracy.pdf")
 
     # loss plots
-    plt.figure(figsize=(10, 7))
+    plt.figure(figsize=(4, 3))
     plt.plot(train_loss, color="orange", linestyle="-", label="train loss")
     plt.plot(test_loss, color="red", linestyle="-", label="test loss")
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
     plt.legend()
-    plt.savefig(f"{out_path}/loss.png")
+    plt.savefig(f"{out_path}/loss.pdf")
 
 
 def save_output(out_path, train_prob, test_prob):
