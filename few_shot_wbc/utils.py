@@ -125,9 +125,12 @@ def vis_result(df, out_path, prefix):
     cm_display = metrics.ConfusionMatrixDisplay(cm).plot()
     fig, ax = plt.subplots(1, 1, figsize=(4, 3))
     roc_display.plot(ax=ax)
+    fig.tight_layout()
     fig.savefig(os.path.join(out_path, "_".join([prefix, "roc.pdf"])))
+
     fig, ax = plt.subplots(1, 1, figsize=(4, 3))
     cm_display.plot(ax=ax)
+    fig.tight_layout()
     fig.savefig(os.path.join(out_path, "_".join([prefix, "cm.pdf"])))
 
 
@@ -142,6 +145,7 @@ def vis_train(out_path, train_acc, test_acc, train_loss, test_loss):
     plt.xlabel("Epochs")
     plt.ylabel("Accuracy")
     plt.legend()
+    plt.tight_layout()
     plt.savefig(f"{out_path}/accuracy.pdf")
 
     # loss plots
@@ -151,6 +155,7 @@ def vis_train(out_path, train_acc, test_acc, train_loss, test_loss):
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
     plt.legend()
+    plt.tight_layout()
     plt.savefig(f"{out_path}/loss.pdf")
 
 
