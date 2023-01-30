@@ -136,17 +136,18 @@ def main():
         test_prob = np.vstack([x.cpu().numpy() for x in test_epoch_prob])
         # training dataset TODO, add test data & move to vis
         # ROC curve
-        y_train = train_epoch_prob[:, -1]
-        fpr, tpr, _ = metrics.roc_curve(y_train, train_epoch_prob[:, 0], pos_label=0)
+        y_train = train_prob[:, -1]
+        fpr, tpr, _ = metrics.roc_curve(y_train, train_prob[:, 0], pos_label=0)
         roc_display = metrics.RocCurveDisplay(fpr=fpr, tpr=tpr).plot()
         # Confusion matrix
-        y_train_pred = np.argmax(train_epoch_prob)
+        y_train_pred = np.argmax(train_prob[:, :2], axis=1)
+        print(y_train_pred, y_train)
         cm = metrics.confusion_matrix(y_train, y_train_pred)
         cm_display = metrics.ConfusionMatrixDisplay(cm).plot()
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 8))
         roc_display.plot(ax=ax1)
         cm_display.plot(ax=ax2)
-        fig.savefig(os.path.join(args.output_dir, "train_res.pdf"))
+        fig.savefig(os.path.join(args.out_path, "train_res.pdf"))
         # save the trained model weights
         print(f"Saving model and loss history to {args.out_path}")
         np.save(os.path.join(args.out_path, "loss"), [train_loss, test_loss])
