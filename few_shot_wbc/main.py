@@ -156,7 +156,7 @@ def main():
         train_acc, test_acc = accs[:, 0], accs[:, 1]
         train_loss, test_loss = losses[:, 0], losses[:, 1]
         vis_train(args.out_path, train_acc, test_acc, train_loss, test_loss)
-        # training dataset TODO, add test data & move to vis
+        # TODO : may need to overlay figures
         df = pd.read_csv(f"{args.out_path}/train_probs.csv")
         prefix = "train"
         vis_result(df, args.out_path, prefix)
