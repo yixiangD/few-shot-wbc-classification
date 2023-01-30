@@ -160,6 +160,9 @@ def main():
         df = pd.read_csv(f"{args.out_path}/train_probs.csv")
         prefix = "train"
         vis_result(df, args.out_path, prefix)
+        df = pd.read_csv(f"{args.out_path}/test_probs.csv")
+        prefix = "test"
+        vis_result(df, args.out_path, prefix)
 
 
 if __name__ == "__main__":
