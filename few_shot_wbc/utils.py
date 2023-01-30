@@ -1,11 +1,14 @@
+import os
+
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
+from sklearn import metrics
 from tqdm.auto import tqdm
 
-matplotlib.style.use("ggplot")
+# matplotlib.style.use("ggplot")
 matplotlib.rcParams["pdf.fonttype"] = 42
 
 
@@ -97,7 +100,38 @@ def save_model(out_path, epochs, model, optimizer, criterion):
     )
 
 
-def save_plots(out_path, train_acc, test_acc, train_loss, test_loss):
+def save_output(out_path, train_prob, test_prob):
+    """
+    Function to save tabular data output; probs and labels
+    """
+    # accuracy plots
+    cols = [str(x) for x in range(np.shape(train_prob)[1] - 1)] + ["y_test"]
+    df = pd.DataFrame(train_prob, columns=cols)
+    df.to_csv(f"{out_path}/train_probs.csv", index=False)
+    df = pd.DataFrame(test_prob, columns=cols)
+    df.to_csv(f"{out_path}/test_probs.csv", index=False)
+
+
+def vis_result(df, out_path, prefix):
+    # ROC curve
+    y_prob = df.values
+    y_true = y_prob[:, -1]
+    fpr, tpr, _ = metrics.roc_curve(y_true, y_prob[:, 0], pos_label=0)
+    roc_display = metrics.RocCurveDisplay(fpr=fpr, tpr=tpr).plot()
+    # Confusion matrix
+    y_pred = np.argmax(y_prob[:, :2], axis=1)
+    # print(y_true_pred, y_true)
+    cm = metrics.confusion_matrix(y_true, y_pred)
+    cm_display = metrics.ConfusionMatrixDisplay(cm).plot()
+    fig, ax = plt.subplots(1, 1, figsize=(4, 3))
+    roc_display.plot(ax=ax)
+    fig.savefig(os.path.join(out_path, "_".join([prefix, "roc.pdf"])))
+    fig, ax = plt.subplots(1, 1, figsize=(4, 3))
+    cm_display.plot(ax=ax)
+    fig.savefig(os.path.join(out_path, "_".join([prefix, "cm.pdf"])))
+
+
+def vis_train(out_path, train_acc, test_acc, train_loss, test_loss):
     """
     Function to save the loss and accuracy plots to disk.
     """
@@ -118,18 +152,6 @@ def save_plots(out_path, train_acc, test_acc, train_loss, test_loss):
     plt.ylabel("Loss")
     plt.legend()
     plt.savefig(f"{out_path}/loss.pdf")
-
-
-def save_output(out_path, train_prob, test_prob):
-    """
-    Function to save tabular data output; probs and labels
-    """
-    # accuracy plots
-    cols = [str(x) for x in range(np.shape(train_prob)[1] - 1)] + ["y_test"]
-    df = pd.DataFrame(train_prob, columns=cols)
-    df.to_csv(f"{out_path}/train_probs.csv", index=False)
-    df = pd.DataFrame(test_prob, columns=cols)
-    df.to_csv(f"{out_path}/test_probs.csv", index=False)
 
 
 def mixup_data(x, y, alpha=1.0, use_cuda=True):

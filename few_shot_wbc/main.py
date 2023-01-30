@@ -4,16 +4,23 @@ import time
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from sklearn import metrics
 from tqdm.auto import tqdm
 
 from few_shot_wbc.datasets import get_data_loader
 from few_shot_wbc.model import SimpleCNN, TorchVisionModel
 from few_shot_wbc.transforms import test_transform, train_transform
-from few_shot_wbc.utils import save_model, save_output, save_plots, test, train
+from few_shot_wbc.utils import (
+    save_model,
+    save_output,
+    test,
+    train,
+    vis_result,
+    vis_train,
+)
 
 
 def main():
@@ -88,32 +95,32 @@ def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Computation device: {device}\n")
     nclass = 2
-    if args.model == "simple":
-        model = SimpleCNN(nclass).to(device)
-    else:
-        model = TorchVisionModel(nclass, args.model, args.pretrained).to(device)
-    print(model)
-    # total parameters and trainable parameters
-    total_params = sum(p.numel() for p in model.parameters())
-    print(f"{total_params:,} total parameters.")
-    total_trainable_params = sum(
-        p.numel() for p in model.parameters() if p.requires_grad
-    )
-    print(f"{total_trainable_params:,} training parameters.")
-    # optimizer
-    optimizer = optim.Adam(model.parameters(), lr=args.lr)
-    # loss function
-    new_weight = [1.0, 1.0]
-    if args.data_imb == "reweight":
-        new_weight = [1, args.imb_param]
-    criterion = nn.CrossEntropyLoss(weight=torch.Tensor(new_weight).to(device))
-    train_loader, test_loader = get_data_loader(
-        args.path, train_transform, test_transform, args.batch_size, args.data_imb
-    )
-    train_loss, test_loss = [], []
-    train_acc, test_acc = [], []
     # start the training
     if args.train:
+        if args.model == "simple":
+            model = SimpleCNN(nclass).to(device)
+        else:
+            model = TorchVisionModel(nclass, args.model, args.pretrained).to(device)
+        print(model)
+        # total parameters and trainable parameters
+        total_params = sum(p.numel() for p in model.parameters())
+        print(f"{total_params:,} total parameters.")
+        total_trainable_params = sum(
+            p.numel() for p in model.parameters() if p.requires_grad
+        )
+        print(f"{total_trainable_params:,} training parameters.")
+        # optimizer
+        optimizer = optim.Adam(model.parameters(), lr=args.lr)
+        # loss function
+        new_weight = [1.0, 1.0]
+        if args.data_imb == "reweight":
+            new_weight = [1, args.imb_param]
+        criterion = nn.CrossEntropyLoss(weight=torch.Tensor(new_weight).to(device))
+        train_loader, test_loader = get_data_loader(
+            args.path, train_transform, test_transform, args.batch_size, args.data_imb
+        )
+        train_loss, test_loss = [], []
+        train_acc, test_acc = [], []
         for epoch in range(args.epochs):
             print(f"[INFO]: Epoch {epoch + 1} of {args.epochs}")
             train_epoch_loss, train_epoch_acc, train_epoch_prob = train(
@@ -134,26 +141,13 @@ def main():
             time.sleep(5)
         train_prob = np.vstack([x.cpu().numpy() for x in train_epoch_prob])
         test_prob = np.vstack([x.cpu().numpy() for x in test_epoch_prob])
-        # training dataset TODO, add test data & move to vis
-        # ROC curve
-        y_train = train_prob[:, -1]
-        fpr, tpr, _ = metrics.roc_curve(y_train, train_prob[:, 0], pos_label=0)
-        roc_display = metrics.RocCurveDisplay(fpr=fpr, tpr=tpr).plot()
-        # Confusion matrix
-        y_train_pred = np.argmax(train_prob[:, :2], axis=1)
-        print(y_train_pred, y_train)
-        cm = metrics.confusion_matrix(y_train, y_train_pred)
-        cm_display = metrics.ConfusionMatrixDisplay(cm).plot()
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 8))
-        roc_display.plot(ax=ax1)
-        cm_display.plot(ax=ax2)
-        fig.savefig(os.path.join(args.out_path, "train_res.pdf"))
         # save the trained model weights
         print(f"Saving model and loss history to {args.out_path}")
         np.save(os.path.join(args.out_path, "loss"), [train_loss, test_loss])
         np.save(os.path.join(args.out_path, "acc"), [train_acc, test_acc])
         save_model(args.out_path, args.epochs, model, optimizer, criterion)
         save_output(args.out_path, train_prob, test_prob)
+        print("TRAINING COMPLETE")
         # save the loss and accuracy plots
     if args.vis:
         # checkpoint = torch.load(f"{out_path}/model.pth")
@@ -161,8 +155,11 @@ def main():
         losses = np.load(os.path.join(args.out_path, "loss.npy"))
         train_acc, test_acc = accs[:, 0], accs[:, 1]
         train_loss, test_loss = losses[:, 0], losses[:, 1]
-        save_plots(args.out_path, train_acc, test_acc, train_loss, test_loss)
-        print("TRAINING COMPLETE")
+        vis_train(args.out_path, train_acc, test_acc, train_loss, test_loss)
+        # training dataset TODO, add test data & move to vis
+        df = pd.read_csv(f"{args.out_path}/train_probs.csv")
+        prefix = "train"
+        vis_result(df, args.out_path, prefix)
 
 
 if __name__ == "__main__":
