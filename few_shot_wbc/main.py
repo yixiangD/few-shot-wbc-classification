@@ -155,36 +155,80 @@ def main():
             root, dir, file = root, dir, file
             break
         # clr = ["b", "g", "r", "k", "y"]
+        clr = [
+            "#808000",
+            "#ff4500",
+            "#c71585",
+            "#00ff00",
+            "#00ffff",
+            "#0000ff",
+            "#1e90ff",
+        ]
+        dir_norm = [x for x in dir if "pretrain" not in x]
+        dir_pretrain = [x for x in dir if "pretrain" in x]
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9, 3))
-        for f in dir:
+
+        for f, c in zip(dir_pretrain, clr):
             accs = np.load(os.path.join(args.out_path, f, "acc.npy"))
             losses = np.load(os.path.join(args.out_path, f, "loss.npy"))
             train_acc, test_acc = accs[0], accs[1]
             train_loss, test_loss = losses[0], losses[1]
-            ax1.plot(
-                np.arange(len(train_acc)), train_acc, linestyle="-", label=f"{f} train"
-            )
-            ax1.plot(
-                np.arange(len(test_acc)), test_acc, linestyle="--", label=f"{f} test"
-            )
+            ax1.plot(np.arange(len(train_acc)), train_acc, linestyle="-", color=c)
+            ax1.plot(np.arange(len(test_acc)), test_acc, linestyle="--", color=c)
             ax2.plot(
                 np.arange(len(train_loss)),
                 train_loss,
                 linestyle="-",
                 label=f"{f} train",
+                color=c,
             )
             ax2.plot(
-                np.arange(len(test_loss)), test_loss, linestyle="--", label=f"{f} test"
+                np.arange(len(test_loss)),
+                test_loss,
+                linestyle="--",
+                label=f"{f} test",
+                color=c,
             )
             ax1.set_ylabel("Accuracy")
             ax2.set_ylabel("Loss (log scale)")
             ax1.set_xlabel("Epoch")
             ax2.set_xlabel("Epoch")
             ax2.set_yscale("log")
-        fig.legend()
+        fig.legend(loc="upper center", ncol=4)
         fig.tight_layout()
-        fig.savefig(f"{args.out_path}/accuracy.pdf")
+        fig.savefig(f"{args.out_path}/accuracy_pretrain.pdf")
+
         exit()
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9, 3))
+        for f, c in zip(dir_norm, clr):
+            accs = np.load(os.path.join(args.out_path, f, "acc.npy"))
+            losses = np.load(os.path.join(args.out_path, f, "loss.npy"))
+            train_acc, test_acc = accs[0], accs[1]
+            train_loss, test_loss = losses[0], losses[1]
+            ax1.plot(np.arange(len(train_acc)), train_acc, linestyle="-", color=c)
+            ax1.plot(np.arange(len(test_acc)), test_acc, linestyle="--", color=c)
+            ax2.plot(
+                np.arange(len(train_loss)),
+                train_loss,
+                linestyle="-",
+                label=f"{f} train",
+                color=c,
+            )
+            ax2.plot(
+                np.arange(len(test_loss)),
+                test_loss,
+                linestyle="--",
+                label=f"{f} test",
+                color=c,
+            )
+            ax1.set_ylabel("Accuracy")
+            ax2.set_ylabel("Loss (log scale)")
+            ax1.set_xlabel("Epoch")
+            ax2.set_xlabel("Epoch")
+            ax2.set_yscale("log")
+        fig.legend(loc="upper center", ncol=4)
+        fig.tight_layout()
+        fig.savefig(f"{args.out_path}/accuracy_norm.pdf")
         # TODO : may need to overlay figures
         df = pd.read_csv(f"{args.out_path}/train_probs.csv")
         prefix = "train"
