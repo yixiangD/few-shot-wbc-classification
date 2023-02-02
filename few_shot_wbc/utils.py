@@ -224,3 +224,48 @@ def vis_acc_loss(out_path, clr):
     fig.savefig(f"{out_path}/accuracy_norm.pdf")
     fig = vis_folder(out_path, dir_pretrain)
     fig.savefig(f"{out_path}/accuracy_pretrain.pdf")
+
+
+def vis_roc(out_path, clr):
+    for root, dir, file in os.walk(out_path):
+        root, dir, file = root, dir, file
+        break
+    dir_norm = [x for x in dir if "pretrain" not in x]
+    dir_pretrain = [x for x in dir if "pretrain" in x]
+    dir_norm.sort()
+    dir_pretrain.sort()
+
+    def vis_folder(out_path, dirs):
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9, 3))
+        for f, c in zip(dirs, clr):
+            df = pd.read_csv(os.path.join(out_path, f, "test_probs.csv"))
+            y_prob = df.values
+            y_true = y_prob[:, -1]
+            fpr, tpr, _ = metrics.roc_curve(y_true, y_prob[:, 0], pos_label=0)
+            auc = round(metrics.auc(fpr, tpr), 2)
+            lab = f.replace("_pretrain", "")
+            ax1.plot(fpr, tpr, color=c, label=f"{lab} AUC={auc}")
+
+            df = pd.read_csv(os.path.join(out_path, f, "train_probs.csv"))
+            y_prob = df.values
+            y_true = y_prob[:, -1]
+            fpr, tpr, _ = metrics.roc_curve(y_true, y_prob[:, 0], pos_label=0)
+            auc = round(metrics.auc(fpr, tpr), 2)
+            lab = f.replace("_pretrain", "")
+            ax2.plot(fpr, tpr, color=c, label=f"{lab} AUC={auc}")
+
+        ax1.set_xlabel("FPR")
+        ax2.set_xlabel("FPR")
+        ax1.set_ylabel("TPR")
+        ax2.set_ylabel("TPR")
+        ax1.set_title("Train ROC")
+        ax2.set_title("Test ROC")
+        ax1.legend(loc="upper center", ncol=2)
+        ax2.legend(loc="upper center", ncol=2)
+        fig.tight_layout()
+        return fig
+
+    fig = vis_folder(out_path, dir_norm)
+    fig.savefig(f"{out_path}/roc_norm.pdf")
+    fig = vis_folder(out_path, dir_pretrain)
+    fig.savefig(f"{out_path}/roc_pretrain.pdf")

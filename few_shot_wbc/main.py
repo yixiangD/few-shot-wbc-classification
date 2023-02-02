@@ -13,14 +13,13 @@ from tqdm.auto import tqdm
 from few_shot_wbc.datasets import get_data_loader
 from few_shot_wbc.model import SimpleCNN, TorchVisionModel
 from few_shot_wbc.transforms import test_transform, train_transform
-from few_shot_wbc.utils import (
+from few_shot_wbc.utils import (  # vis_result,; vis_train,
     save_model,
     save_output,
     test,
     train,
     vis_acc_loss,
-    vis_result,
-    vis_train,
+    vis_roc,
 )
 
 
@@ -161,15 +160,9 @@ def main():
             "#0000ff",
             "#1e90ff",
         ]
-        vis_acc_loss(args.out_path, clr)
-        exit()
+        # vis_acc_loss(args.out_path, clr)
         # TODO : may need to overlay figures
-        df = pd.read_csv(f"{args.out_path}/train_probs.csv")
-        prefix = "train"
-        vis_result(df, args.out_path, prefix)
-        df = pd.read_csv(f"{args.out_path}/test_probs.csv")
-        prefix = "test"
-        vis_result(df, args.out_path, prefix)
+        vis_roc(args.out_path, clr)
 
 
 if __name__ == "__main__":
