@@ -177,3 +177,50 @@ def mixup_data(x, y, alpha=1.0, use_cuda=True):
 
 def mixup_criterion(criterion, pred, y_a, y_b, lam):
     return lam * criterion(pred, y_a) + (1 - lam) * criterion(pred, y_b)
+
+
+def vis_acc_loss(out_path, clr):
+    for root, dir, file in os.walk(out_path):
+        root, dir, file = root, dir, file
+        break
+    dir_norm = [x for x in dir if "pretrain" not in x]
+    dir_pretrain = [x for x in dir if "pretrain" in x]
+    dir_norm.sort()
+    dir_pretrain.sort()
+
+    def vis_folder(out_path, dirs):
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9, 3))
+        for f, c in zip(dirs, clr):
+            accs = np.load(os.path.join(out_path, f, "acc.npy"))
+            losses = np.load(os.path.join(out_path, f, "loss.npy"))
+            train_acc, test_acc = accs[0], accs[1]
+            train_loss, test_loss = losses[0], losses[1]
+            ax1.plot(np.arange(len(train_acc)), train_acc, linestyle="-", color=c)
+            ax1.plot(np.arange(len(test_acc)), test_acc, linestyle="--", color=c)
+            ax2.plot(
+                np.arange(len(train_loss)),
+                train_loss,
+                linestyle="-",
+                label=f"{f} train",
+                color=c,
+            )
+            ax2.plot(
+                np.arange(len(test_loss)),
+                test_loss,
+                linestyle="--",
+                label=f"{f} test",
+                color=c,
+            )
+            ax1.set_ylabel("Accuracy")
+            ax2.set_ylabel("Loss (log scale)")
+            ax1.set_xlabel("Epoch")
+            ax2.set_xlabel("Epoch")
+            ax2.set_yscale("log")
+        fig.legend(loc="upper center", ncol=4)
+        fig.tight_layout()
+        return fig
+
+    fig = vis_folder(out_path, dir_norm)
+    fig.savefig(f"{out_path}/accuracy_norm.pdf")
+    fig = vis_folder(out_path, dir_pretrain)
+    fig.savefig(f"{out_path}/accuracy_pretrain.pdf")

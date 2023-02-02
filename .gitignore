@@ -15,4 +15,4 @@ index
 all_CELL_data-master
 *.sh
 *.out
-outputs/
+outputs*/
