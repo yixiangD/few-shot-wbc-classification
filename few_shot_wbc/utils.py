@@ -269,3 +269,13 @@ def vis_roc(out_path, clr):
     fig.savefig(f"{out_path}/roc_norm.pdf")
     fig = vis_folder(out_path, dir_pretrain)
     fig.savefig(f"{out_path}/roc_pretrain.pdf")
+
+
+def compute_cm(df):
+    # df = pd.read_csv(os.path.join(out_path, f, "test_probs.csv"))
+    y_prob = df.values
+    y_pred = np.argmax(y_prob[:, :2], axis=1)
+    y_true = y_prob[:, -1]
+    cm = metrics.confusion_matrix(y_true, y_pred)
+    rep = metrics.classification_report(y_true, y_pred, digits=3, output_dict=True)
+    return cm, rep
