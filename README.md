@@ -1,7 +1,21 @@
 # Deep learning model for WBC image classification
+Repository for paper
+```
+@article{deng2023deep,
+  title={Deep learning for few-shot white blood cell image classification and feature learning},
+  author={Deng, Yixiang and Li, He},
+  journal={Computer Methods in Biomechanics and Biomedical Engineering: Imaging \& Visualization},
+  pages={1--11},
+  year={2023},
+  publisher={Taylor \& Francis}
+}
+```
+If you find this repository helpful, we kindly encourage you to cite our paper listed above.
+
+Please feel free to create issues if you need help running the code. We will try to help you as much as we can.
 ## Preprocess data
 ### Dataset
-1. Dataset used in the paper is available [Github](https://github.com/akshaylamba/all_CELL_data). We also used the labels of WBC class for the same dataset on [kaggle](https://www.kaggle.com/datasets/paultimothymooney/blood-cells?resource=download), located at ```dataset-master/dataset-master/labels.csv``` (TODO: save it to data).
+1. Dataset used in the paper is publicly available on [Github](https://github.com/akshaylamba/all_CELL_data). We also used the labels of WBC class for the same dataset on [kaggle](https://www.kaggle.com/datasets/paultimothymooney/blood-cells?resource=download), located at ```dataset-master/dataset-master/labels.csv```.
 1. A dataset for microscopic peripheral blood cell images for development of automatic recognition systems [a recently published large dataset](https://data.mendeley.com/datasets/snkd93bnjr/1) (optional for
   testing)
   
@@ -61,7 +75,7 @@ Transfer learning with
 - EfficientNet b3
 
 
-### Methods for Data Imbalance (TODO)
+### Methods for Data Imbalance
 - Class weighting: [pytorch](https://discuss.pytorch.org/t/dealing-with-imbalanced-datasets-in-pytorch/22596)
 - Traindata resampling: [dataset sampler](https://github.com/ufoym/imbalanced-dataset-sampler)
 - Minority Mixup: perform oversampling using mixup ([paper](https://arxiv.org/pdf/1710.09412.pdf), [code](https://github.com/facebookresearch/mixup-cifar10)).
